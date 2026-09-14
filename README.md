@@ -1,11 +1,11 @@
-# Chucklenet Predictor - Reverse Funny Strength Prediction Model
+# HaHaScore — Humor Strength Predictor
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
 [![PyTorch](https://img.shields.io/badge/PyTorch-2.0+-orange.svg)](https://pytorch.org/)
 [![Transformers](https://img.shields.io/badge/Transformers-4.35+-green.svg)](https://huggingface.co/docs/transformers/index)
 
-🎭 **Chucklenet Predictor** is an advanced AI system that predicts and generates humor content with quantitative humor strength ratings. Built on cutting-edge machine learning techniques, it provides both forward humor prediction and reverse modeling capabilities.
+🎭 **HaHaScore** is an advanced AI system that predicts and generates humor content with quantitative humor strength ratings. Built on cutting-edge machine learning techniques, it provides both forward humor prediction and reverse modeling capabilities.
 
 ## 🌟 Features
 
@@ -40,8 +40,8 @@
 ### Basic Installation
 ```bash
 # Clone the repository
-git clone https://github.com/Das-rebel/Chucklenet_predictor.git
-cd Chucklenet_predictor
+git clone https://github.com/Das-rebel/HaHaScore.git
+cd HaHaScore
 
 # Install dependencies
 pip install -r requirements.txt
@@ -66,7 +66,7 @@ pip install matplotlib seaborn pandas
 
 ### Basic Usage
 ```python
-from chucklenet_predictor import ReverseHumorModel
+from hahascore import ReverseHumorModel
 
 # Initialize the model
 model = ReverseHumorModel(device="auto")
@@ -143,7 +143,7 @@ Full training pipeline demonstration including data preparation, model training,
 
 ### Model Components
 ```
-Chucklenet Predictor/
+HaHaScore/
 ├── models/
 │   ├── text_humor_classifier.py    # BERT/RoBERTa-based text analysis
 │   ├── audio_laugh_detector.py     # Whisper-based audio processing
@@ -214,7 +214,7 @@ for i in range(0, len(texts), batch_size):
 
 ### Evaluation and Metrics
 ```python
-from chucklenet_predictor.utils import EvaluationMetrics
+from hahascore.utils import EvaluationMetrics
 
 evaluator = EvaluationMetrics()
 
@@ -300,10 +300,10 @@ training_config = {
 ### Citation
 ```bibtex
 @misc{chucklenet2024,
-  title={Chucklenet Predictor: Reverse Funny Strength Prediction Model},
+  title={HaHaScore: Reverse Funny Strength Prediction Model},
   author={Subho Das},
   year={2024},
-  howpublished={\url{https://github.com/Das-rebel/Chucklenet_predictor}},
+  howpublished={\url{https://github.com/Das-rebel/HaHaScore}},
   note={Advanced AI system for humor analysis and generation}
 }
 ```
@@ -315,8 +315,8 @@ We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guid
 ### Development Setup
 ```bash
 # Clone and setup development environment
-git clone https://github.com/Das-rebel/Chucklenet_predictor.git
-cd Chucklenet_predictor
+git clone https://github.com/Das-rebel/HaHaScore.git
+cd HaHaScore
 
 # Create virtual environment
 python -m venv venv
@@ -330,8 +330,8 @@ pip install -e .
 python -m pytest tests/
 
 # Run linting
-flake8 chucklenet_predictor/
-black chucklenet_predictor/
+flake8 hahascore/
+black hahascore/
 ```
 
 ## 📋 License
@@ -348,8 +348,8 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 📞 Support & Contact
 
-- **Issues**: [GitHub Issues](https://github.com/Das-rebel/Chucklenet_predictor/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/Das-rebel/Chucklenet_predictor/discussions)
+- **Issues**: [GitHub Issues](https://github.com/Das-rebel/HaHaScore/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/Das-rebel/HaHaScore/discussions)
 - **Email**: subho.das@example.com (replace with actual contact)
 - **Discord**: [Chucklenet Community Server](invite-link) (if applicable)
 

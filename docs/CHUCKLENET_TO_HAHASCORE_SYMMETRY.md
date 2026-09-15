@@ -740,13 +740,38 @@ Integrate arc tracker and GroupKFold training on 641 StandUp4AI files.
 
 ---
 
-## Expected Impact on AUC Target (0.70)
+### Bridge 1 Validation Results (Tested: Sep 14, 2026)
+
+Tested on 5 cached StandUp4AI audio files (94 segments, ~32 min total):
+
+| File | Duration | Segments | Score Mean±Std | Range | Top Segment |
+|------|----------|----------|----------------|-------|-------------|
+| `-1FrUOEswOk,fr.m4a` | 495s | 24 | 5.8±12.3 | [1.8, 64.6] | 64.6 (French, OOD) |
+| `-9Q122jAAOM.m4a` | 451s | 22 | 5.2±1.7 | [1.5, 8.1] | 8.1 |
+| `10U1uggokdg.m4a` | 469s | 23 | 11.2±23.0 | [1.2, 94.4] | **94.4** |
+| `13kjFE82Awk.m4a` | 214s | 10 | 7.9±10.0 | [2.6, 37.7] | 37.7 |
+| `18H1aeoGybw.m4a` | 301s | 15 | 3.7±0.4 | [2.7, 4.3] | 4.3 |
+| **Combined** | **1930s** | **94** | **6.8±13.7 (median=4.1)** | **[1.2, 94.4]** | 94.4 |
+
+**Score distribution**: 95.7% in 0–10 range, 3.2% ≥50, 1.1% ≥80.
+
+**Key finding**: ChuckleNet pseudo-labels measure **laughter likelihood** (audio amplitude/spectral energy correlating with laughter), NOT pure humor strength. A quiet deadpan punchline scores low; a loud audience reaction to mediocre content scores high.
+
+**Practical value**: Still useful as supplementary training signal because:
+1. Laughter is a valid humor proxy (TIC-TALK r=−0.75)
+2. Continuous labels give more gradient than binary
+3. 64K+ segments from 641 files vs 21K clips from 48 — 3× more data
+4. Audio-laughter signal complements text features in HaHaScore fusion
+
+**Limitation**: Cannot distinguish clever quiet jokes from loud mediocre ones. Use human-labeled validation set to calibrate.
+
+### Expected Impact on AUC Target (0.70)
 
 | Bridge | Expected AUC Gain | Mechanism |
 |--------|-----------------|-----------|
-| Bridge 1 (pseudo-labels) | +0.03–0.05 | 3x more training data, continuous labels |
+| Bridge 1 (pseudo-labels) | +0.02–0.04 | 3x more training data; audio-laughter as proxy (limited by OOD gap) |
 | Bridge 2 (cascade gate) | +0.01–0.02 | Better audio-text fusion, less noise |
 | Bridge 3 (incongruity) | +0.02–0.04 | TIC-TALK r=−0.75, directly predictive |
 | Bridge 4 (arc tracker) | +0.01–0.02 | Context-aware scoring |
 | Bridge 5 (scaleup) | +0.02–0.03 | More diverse training data |
-| **Combined** | **+0.08–0.12** | 0.632 CV → **0.71–0.75 CV** |
+| **Combined** | **+0.07–0.10** | 0.632 CV → **0.70–0.73 CV** |

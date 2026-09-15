@@ -450,18 +450,21 @@ Response:
 
 ### Week 1: Infrastructure
 - [ ] Set up Modal account for A100 GPU access
-- [ ] Download StandUp4AI English dataset (7,599 CSVs)
+- [ ] Download StandUp4AI English dataset (7,599 CSVs)  
 - [ ] Integrate 103 StandUp4AI videos' WavLM features (already on GDrive)
 - [ ] Build data processing pipeline for new videos
+- [ ] **NEW: Extract kinetic energy features from video frames** (TIC-TALK: r=-0.75 with laughter)
 
-### Week 2: Model v6a
-- [ ] Compare HuBERT vs WavLM on same data split
-- [ ] Train bilinear fusion with best audio encoder
+### Week 2: Model v6a — HuBERT vs WavLM + Kinetic Energy
+- [ ] Compare HuBERT vs WavLM on SAME data split (MTLLFM: HuBERT > WavLM for speech)
+- [ ] Add **kinetic energy** (RMS, arm spread, trunk lean) as third input modality
+- [ ] Train bilinear fusion with all three: text + audio + kinetic
 - [ ] Evaluate with 5-fold CV (consistent metric)
+- [ ] **Expected: +5-8% AUC from kinetic energy alone** (r=-0.75 is strong signal)
 
 ### Week 3: Model v6b
-- [ ] Implement cross-attention fusion
-- [ ] Add auxiliary tasks (laughter detection, energy level)
+- [ ] Implement cross-attention fusion (DARC-CLIP: adaptive > static)
+- [ ] Add auxiliary tasks (laughter detection, energy level, pause detection)
 - [ ] Train on expanded dataset (10K clips)
 
 ### Week 4: Model v6c + Commercial
@@ -471,7 +474,8 @@ Response:
 - [ ] Publish v6 models to HuggingFace
 
 ### 30-Day Deliverables
-- v6 model with AUC ≥ 0.68 (vs current 0.632)
+- v6 model with AUC ≥ 0.70 (vs current 0.632) — target updated after kinetic energy finding
+- Kinetic energy feature extractor integrated
 - Working REST API
 - API documentation
 - Updated Gradio demo with v6 model
@@ -489,6 +493,48 @@ Response:
 | GPU compute cost too high | Low | Medium | Use Kaggle kernels (free), Modal spot instances |
 | Kaggle kernel unreliable | High | Low | Local CPU fallback + Modal |
 | Data quality issues | Medium | Medium | Strict quality filtering before training |
+
+---
+
+## Appendix B: Detailed Paper Summaries (Agent Research — Sep 2026)
+
+### MTLLFM (2605.25409) — Tier 1
+- **Architecture**: Fixed HuBERT (audio) + MAE (video) → temporal softmax pooling → adaptive modality gating
+- **Key innovation**: Weakly supervised (clip-level labels → frame-level localization)
+- **Datasets**: UR-FUNNY-Temporal + SMILE-Temporal: 11,053 videos, 78.8 hours
+- **Results**: F1=99%, localization precision=68.1%, +227% CIDEr on downstream reasoning
+- **Critical**: HuBERT > WavLM for speech tasks; adaptive gating handles audio-visual dominance
+
+### TIC-TALK (2603.21803) — Tier 1
+- **Key finding**: Kinetic energy r=-0.75 with laughter (strongest validated signal)
+- **90 specials** (2015-2024), 5,400 topic segments, BERTopic+WhisperAT+YOLOv8s-pose
+- **Pipeline**: Whisper-AT 0.8s laughter detection, YOLOv8-cls shot classifier, skeletal keypoints 1fps
+- **Counter-intuitive**: Stillness before punchline = more laughter; close-up proportion r=+0.28
+- **Actionable**: Use kinetic energy (computed from skeletal keypoints) as auxiliary input to strength model
+
+### CaRGo-T (2608.23172) — Tier 1
+- **Architecture**: Causal graph → code serialization → VLM interpretation
+- **+1-20% on humor understanding, +1-3% on detection** (4 datasets)
+- **Potential extension**: Causal intensity chains could predict humor STRENGTH, not just detect presence
+
+### MAR-12 (2607.15442) — Tier 2
+- **12 structured perspectives** from humor/hate theory; role-aware soft-gated attention
+- **80.3% humor accuracy** on PrideMM and Memotion
+- **Key**: Gated attention across dimensions > single-path fusion (confirms our bilinear finding)
+
+### GMM-Anchored JEPA (2602.09040) — Tier 2
+- **67.76% emotion recognition** vs 65.46% WavLM-style baseline
+- Higher cluster entropy (98% vs 31%) — more uniform representation utilization
+- **Actionable**: Consider JEPA-based speech encoder instead of HuBERT/WavLM for emotion tasks
+
+### Multi-Channel SER (2602.18802) — Tier 2
+- HuBERT + ViT for cocktail party speech emotion recognition
+- **9.5% absolute improvement** over single-channel baselines
+- **Validates HuBERT superiority** for speech emotion tasks over WavLM
+
+### BanglaMemeEvidence (2607.03981) — Tier 3
+- 2,917 Bengali memes with natural language explanations, F1=0.74
+- Low relevance for English comedy but valuable for multilingual expansion
 
 ---
 

@@ -143,7 +143,8 @@ with gr.Blocks(title="HaHaScore Humor Predictor") as demo:
         aud = gr.Audio(label="Audio (wav/mp3)", type="filepath")
         fus_btn = gr.Button("Score Fusion", variant="primary")
         fus_btn.click(score_fusion, inputs=[txt2, aud], outputs=gr.Label(num_top_classes=3))
-    gr.Markdown("**Text**: [`Hayasuki/hahascore-text-v7`](https://huggingface.co/Hayasuki/hahascore-text-v7) (AUC 0.566) | **Fusion**: [`Hayasuki/hahascore-fusion-v3`](https://huggingface.co/Hayasuki/hahascore-fusion-v3) (AUC 0.601)")
+    gr.Markdown("**Text**: [`hahascore-text-v7`](https://huggingface.co/Hayasuki/hahascore-text-v7) (AUC 0.566) | **Fusion v3**: [`hahascore-fusion-v3`](https://huggingface.co/Hayasuki/hahascore-fusion-v3) (AUC 0.601) | **Fusion v5 (final)**: [`hahascore-fusion-v5`](https://huggingface.co/Hayasuki/hahascore-fusion-v5) (AUC 0.613, 5-fold CV 0.632±0.007)")
+    gr.Markdown("**Key Finding**: Text-only models are RANDOM (AUC ~0.50) for sentence-level humor. Audio is the primary discriminative signal (+13% AUC improvement over text.)")
 
 if __name__ == "__main__":
     demo.queue().launch(server_name="0.0.0.0", server_port=7860, show_error=True)

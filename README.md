@@ -17,8 +17,9 @@ Audio prosody is the primary discriminative signal (+13% AUC improvement).**
 | Text-only (DeBERTa) | 0.501 | Indistinguishable from random |
 | Audio-only (WavLM) | 0.538 | Moderate discrimination |
 | **Fusion v5 (bilinear)** | **0.613** | **RoBERTa + WavLM bilinear** |
-| 5-Fold CV AUC | **0.632 ± 0.007** | Stable across video subsets |
-| **v6 target** | **≥ 0.70** | **HuBERT + kinetic energy + cascade gate** |
+| 5-Fold CV AUC (v5) | **0.632 ± 0.007** | Stable across video subsets |
+| **Bridge 4 (GRU arcs)** | **0.842 ± 0.027** | **BiGRU over WavLM+prosody segments** |
+| **v6 target** | **≥ 0.85** | **Cross-attention + cascade gate + self-training** |
 
 ## Bridge Status
 
@@ -28,7 +29,7 @@ Audio prosody is the primary discriminative signal (+13% AUC improvement).**
 | Bridge 1 (Pseudo-labels) | ✅ | 639 files × 20 segments = 12,780 pseudo-labels |
 | Bridge 2 (Cascade gate) | 🔄 | Audio gated by text confidence |
 | Bridge 3 (Incongruity) | ✅ | Validated: audio-only ρ=−0.23, TEXT required |
-| Bridge 4 (Humor arcs) | 📋 | Sequential GRU over segments |
+| Bridge 4 (Humor arcs) | ✅ | **5-Fold CV AUC = 0.8422 ± 0.027** |
 | Bridge 5 (Self-training) | 📋 | Iterative label refinement |
 | **v6 training** | **🔄** | **TriModal fusion on Modal T4** |
 
@@ -40,6 +41,17 @@ Audio prosody is the primary discriminative signal (+13% AUC improvement).**
 - Per-segment prosody with WavLM + MFCC + pitch features
 - 4× downsample (16kHz→4kHz) for efficient WavLM inference
 - **0 errors** across all 639 files
+
+### Bridge 4 Results (Completed Sep 19 2026)
+- **Bidirectional GRU** over 20 sequential segments per file
+- **Input**: 791d per segment (768d WavLM + 23d prosody) + 4d position encoding
+- **Architecture**: BiGRU(128) × 2 layers → MLP(256→128→1)
+- **5-Fold CV AUC: 0.8422 ± 0.027** (massive improvement over v5's 0.632)
+- Fold AUCs: [0.8459, 0.8575, 0.8509, 0.8667, 0.7898]
+- Trainable params: ~790K
+- **Key insight**: Sequential modeling of humor arcs captures temporal dynamics missed by per-segment fusion
+- Segment 20 consistently low (mean=0.291) — model learned end-of-video ≠ funny
+- ⚠️ Evaluated on pseudo-labeled data (in-distribution) — real generalization TBD
 
 ## v6 Architecture (In Progress)
 

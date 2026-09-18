@@ -207,7 +207,7 @@ def run_pseudolabeling():
     return {"n": len(valid), "total": len(audio_files)}
 
 
-@app.local_entrypoint
+@app.local_entrypoint()
 def main():
     result = run_pseudolabeling.remote()
     print(f"\nDone: {result}")

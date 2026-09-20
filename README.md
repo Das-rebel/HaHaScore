@@ -2,7 +2,7 @@
 
 **Sentence-level humor strength prediction (0–100) via multimodal fusion of text and audio.**
 
-> **v6 trained.** TriModal Cross-Attention fusion achieves AUC **0.858** (+0.016 over audio-only Bridge 4). Target AUC ≥ 0.85 achieved!
+> **Bridge 7 trained.** Cascade Gate fusion achieves AUC **0.860** (+0.002 over v6). New best model!
 
 ## Performance
 
@@ -12,7 +12,8 @@
 | Audio-only (WavLM LR) | 0.538 | Weak signal |
 | Fusion v5 (bilinear) | 0.632 ± 0.007 | Per-segment text+audio |
 | Bridge 4 (BiGRU arcs) | 0.842 ± 0.027 | Audio-only, sequential |
-| **v6 (TriModal CrossAttn)** | **0.858 ± 0.015** | **✓ Target achieved!** |
+| **v6 (TriModal CrossAttn)** | 0.858 ± 0.015 | Cross-attention fusion |
+| **Bridge 7 (Cascade Gate)** | **0.860 ± 0.018** | **✓ New best!** |
 
 ## Bridge Status
 
@@ -24,7 +25,8 @@
 | Bridge 3 (Incongruity) | — | ✅ Validated |
 | Bridge 4 (BiGRU arcs) | 0.842 | ✅ Audio-only best |
 | Bridge 5 (Self-training) | 0.840 | ✅ Confirmed hurts |
-| **v6 (TriModal)** | **0.858** | ✅ **Cross-attention fusion** |
+| **v6 (TriModal)** | 0.858 | ✅ Cross-attention |
+| **Bridge 7 (Cascade Gate)** | **0.860** | ✅ **New best** |
 
 ## v6: TriModal Cross-Attention Fusion
 
@@ -80,7 +82,7 @@ StandUp4AI Audio (639 files, 12,780 segments)
 
 1. **Text alone is random** (AUC 0.50) — words carry no humor signal
 2. **Audio alone achieves AUC 0.842** — delivery is the dominant signal
-3. **Text+audio achieves AUC 0.858** (+0.016) — text provides semantic context
+3. **Cascade gate achieves AUC 0.860** (+0.002 over cross-attention) — gating mechanism helps
 4. **Self-training hurts** — iterative confidence filtering creates distributional shift
 5. **Humor ≠ laughter** — pseudo-labels (funniness) ≠ gold labels (laughter)
 

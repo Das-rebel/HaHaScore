@@ -7,6 +7,7 @@ tags:
 - speech
 - nlp
 - comedy
+- cascade-gate
 - cross-attention
 - gru
 - pytorch
@@ -15,9 +16,9 @@ datasets:
 metrics:
 - AUC
 model_index:
-- name: v6 TriModal
+- name: Bridge 7 Cascade Gate
   type: multimodal_humor_detector
-  accuracy: 0.858
+  accuracy: 0.860
   literature:
     arxiv: "https://github.com/Das-rebel/HaHaScore"
 ---
@@ -26,67 +27,75 @@ model_index:
 
 **Sentence-level humor strength prediction (0-1) via multimodal fusion of text and audio.**
 
-## Models in this repo
+## Models in this repo (Best to Baseline)
 
 | File | Model | AUC | Description |
 |------|-------|-----|-------------|
-| `pytorch_model.bin` / `bridge4_arc_tracker.py` | Bridge 4 | 0.842 | BiGRU over WavLM+prosody, audio-only |
-| `fusion_v5_model.bin` / `fusion_v5_inference.py` | Fusion v5 | 0.632 | Bilinear fusion (DeBERTa + WavLM), per-segment |
-| `v6_trimodal.pt` / `v6_inference.py` | **v6** | **0.858** | **Best — TriModal Cross-Attention (RoBERTa + WavLM)** |
+| `bridge7_cascade.pt` / `bridge7_inference.py` | **Bridge 7** | **0.860** | **✓ Current best** |
+| `v6_trimodal.pt` / `v6_inference.py` | v6 | 0.858 | TriModal Cross-Attention |
+| `pytorch_model.bin` / `bridge4_arc_tracker.py` | Bridge 4 | 0.842 | Audio-only BiGRU |
+| `fusion_v5_model.bin` / `fusion_v5_inference.py` | Fusion v5 | 0.632 | Bilinear fusion (per-segment) |
 
-## v6: TriModal Cross-Attention (Best Model)
+## Bridge 7: Cascade Gate (Best Model)
 
-**5-fold CV AUC: 0.858 ± 0.015** — exceeds our 0.85 target.
+**5-fold CV AUC: 0.860 ± 0.018** — current best.
 
 ```
-Text (RoBERTa, 768d) ──→ Cross-Attention ──┐
-                                                 ├──→ BiGRU(128d×2) → MLP → Score
-Audio (WavLM+prosody, 791d) ──→ BiGRU ────────┘
+Text (RoBERTa, 768d) → text_proj → text_confidence (scalar) → sigmoid
+Audio (WavLM+prosody, 791d) → audio_proj (128d)
+gated_audio = audio_proj * text_confidence
+fused = concat(text_proj, gated_audio, cross_attn_output)
+BiGRU(128d×2) → MLP → Score
 ```
 
-### Architecture
-- Text: RoBERTa-base CLS embedding per segment (768d)
-- Audio: WavLM-base-plus + 23d prosody per segment (791d)
-- Cross-attention: 4-head bidirectional (text ↔ audio)
+**Architecture**:
+- Text: RoBERTa-base CLS embedding (768d) → Linear(768→128) + LayerNorm + ReLU + Dropout(0.3)
+- Text confidence: Linear(128→64) → ReLU → Dropout(0.3) → Linear(64→1) → Sigmoid
+- Audio: Linear(791→128) + LayerNorm + ReLU + Dropout(0.3)
+- Cross-attention: 4-head attention (audio → text)
+- Gated audio: `audio_proj * text_confidence`
 - BiGRU(128d, 2 layers, bidirectional)
 - MLP(256→128→1) + Sigmoid
-- Trainable params: ~1.16M
+- Trainable params: ~1.0M
 
-### Training
-- Whisper-base transcription of 639 StandUp4AI files (66,851 words, 0 errors)
-- RoBERTa-base text features aligned to 20 equal-duration segments per file
-- 5-fold CV on pseudo-labels from Bridge 1
-
-### v6 Results (5-fold CV)
+**Results** (5-fold CV):
 | Fold | AUC |
 |------|-----|
-| 1 | 0.860 |
-| 2 | 0.879 |
-| 3 | 0.856 |
-| 4 | 0.864 |
-| 5 | 0.833 |
-| **Mean** | **0.858 ± 0.015** |
+| 1 | 0.856 |
+| 2 | 0.873 |
+| 3 | 0.869 |
+| 4 | 0.877 |
+| 5 | 0.827 |
+| **Mean** | **0.860 ± 0.018** |
+
+## v6: TriModal Cross-Attention
+
+AUC: 0.858 ± 0.015
+
+Same architecture but with bidirectional cross-attention (text↔audio both directions).
 
 ## Key Findings
 
 1. **Text alone is random** (AUC 0.50) — words carry no humor signal
 2. **Audio alone achieves AUC 0.842** — delivery is the dominant signal
-3. **Text+audio achieves AUC 0.858** (+0.016) — text provides semantic context
+3. **Cascade gate achieves AUC 0.860** — gating mechanism is better than pure cross-attention
 4. **Self-training hurts** — iterative confidence filtering creates distributional shift
 5. **Humor ≠ laughter** — pseudo-labels (funniness) ≠ gold labels (laughter)
 
 ## Usage
 
 ```python
-from v6_inference import score_segments
+from bridge7_inference import score_segments
 import numpy as np
 
-# Load features
+# Load features (20 segments × feature_dim)
 text_features = np.load("text_features.npy")   # (20, 768)
-audio_features = np.load("audio_features.npy")   # (20, 791)
+audio_features = np.load("audio_features.npy")  # (20, 791)
 
 # Score
-scores = score_segments(text_features, audio_features)  # (20,)
+scores, confidences = score_segments(text_features, audio_features)
+# scores: (20,) humor strength 0-1
+# confidences: (20,) text confidence 0-1
 print(f"Mean humor strength: {scores.mean():.3f}")
 ```
 

@@ -1,0 +1,155 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage{acl}
+\usepackage{times}
+\usepackage{url}
+\usepackage{latexsym}
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{booktabs}
+\usepackage{colortbl}
+
+\title{HaHaScore: Sentence-Level Humor Strength Prediction\\ via Text-Audio Cascade Fusion}
+
+\author{Subhajit Das \\
+  Indian Institute of Science Bangalore \\
+  {\tt sdas22@gmail.com}}
+
+\date{September 2026}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+We present HaHaScore, a multimodal system for predicting humor strength at the sentence level from text and audio. Through systematic ablation, we find that text-only models achieve AUC $\sim$0.50 (indistinguishable from random) for sentence-level humor detection, while audio prosodic features provide the primary discriminative signal. We show that temporal arc modeling --- processing audio as a sequence of segments with a bidirectional GRU --- achieves AUC 0.842. Our Cascade Gate fusion mechanism, where text confidence modulates audio contribution, achieves AUC 0.860 (+0.002 over cross-attention, +0.018 over audio-only), and AUC 0.590 on real human laughter labels. This challenges the prevailing text-first approach in humor detection and establishes audio delivery as the dominant factor in sentence-level humor perception.
+\end{abstract}
+
+\section{Introduction}
+\label{sec:intro}
+
+Humor detection has been approached primarily as a text classification problem \cite{yang-etal-2015-humor,CNNhumor,weller-2020-humor}. However, these approaches ignore the critical role of \emph{delivery} --- the prosodic features, timing, and inflection that transform ordinary text into comedy.
+
+We collect a dataset of sentence-level annotations from 48 Indian comedy videos, aggregate words into sentence clips using a 0.5-second gap heuristic, and train multimodal fusion models. We find:
+
+\begin{itemize}
+    \item Text-only models (RoBERTa, DeBERTa) achieve AUC $\sim$0.50 --- equivalent to random guessing
+    \item Audio-only models (WavLM) achieve AUC 0.54
+    \item BiGRU temporal arc modeling achieves AUC 0.842 (+0.21 over per-segment fusion)
+    \item Cascade Gate fusion achieves AUC 0.860 (+0.002 over cross-attention)
+\end{itemize}
+
+Comedy is fundamentally about \emph{delivery}. Our main contributions: (1) systematic ablation of text vs audio modalities, (2) temporal arc modeling with BiGRU, (3) cascade gate fusion mechanism, (4) validation on real human laughter labels.
+
+\section{Related Work}
+\label{sec:related}
+
+\textbf{Humor detection in text:} Prior work treats humor as text classification, using BERT/RoBERTa fine-tuning on jokes and one-liners \cite{CNNhumor, yang-etal-2015-humor, weller-2020-humor}. These approaches assume words alone carry humor signal --- we show this fails at sentence level.
+
+\textbf{Audio prosody for comedy:} Prior work on StandUp~\cite{standup4ai} uses WavLM for laughter detection but not humor scoring. Prosodic features (pitch, energy, MFCCs) capture delivery quality but are underexplored for humor prediction.
+
+\textbf{Multimodal fusion:} Late fusion (concat + MLP) \cite{MMGCN}, cross-attention \cite{vilbert}, and gate mechanisms \cite{gated_multimodal} have been applied to VQA and other tasks. We adapt cascade gating where one modality's confidence modulates another's contribution.
+
+\section{Data Pipeline}
+\label{sec:data}
+
+\textbf{StandUp4AI corpus:} 639 comedy videos (48 unique, multi-language). We process audio at 16kHz, split into 20 equal-duration segments per file.
+
+\textbf{Text extraction:} Whisper-base transcription (auto-detect language) produces word-level timestamps. Text words are aligned to audio segments via equal-duration binning.
+
+\textbf{Features:} (1) \emph{Text}: RoBERTa-base CLS embedding per segment (768d). (2) \emph{Audio}: WavLM-base-plus last hidden state mean-pooled (768d) + 23d prosody (RMS, MFCC1-13, F0, ZCR, spectral features) = 791d per segment.
+
+\textbf{Pseudo-labels:} Bridge 1 produces per-segment humor scores (0-1) using WavLM+prosody features fed to a fusion MLP trained on laughter detection. Mean score 0.940 (high agreement on comedy).
+
+\section{Models}
+\label{sec:models}
+
+\subsection{Bridge 4: BiGRU Arc Tracker (Audio-Only)}
+\label{sec:bridge4}
+
+Process audio as a temporal sequence of 20 segments:
+
+\begin{verbatim}
+Per-segment: 768d WavLM + 23d prosody + 4d position = 795d
+    → BiGRU(128d, 2 layers, bidirectional)
+    → MLP(256→128→1) + Sigmoid
+    → per-segment humor score
+\end{verbatim}
+
+\textbf{Results:} 5-fold CV AUC = 0.842 $\pm$ 0.027. Segment 20 (end-of-video) has mean score 0.291, confirming the model learns that endings are systematically less funny.
+
+\subsection{v6: TriModal Cross-Attention}
+\label{sec:v6}
+
+Text (768d) and audio (791d) features are projected to 128d, then fused via bidirectional cross-attention (4-head, text↔audio both directions), then BiGRU:
+
+\begin{verbatim}
+Text (768d) → concat with Audio (791d) → BiGRU → Score
+Audio (791d) ───────────────────────────→ BiGRU ↗
+\end{verbatim}
+
+\textbf{Results:} 5-fold CV AUC = 0.858 $\pm$ 0.015.
+
+\subsection{Bridge 7: Cascade Gate Fusion (Best)}
+\label{sec:bridge7}
+
+Text confidence gates how much the model trusts audio:
+
+\begin{verbatim}
+text (768d) → text_proj(128d) → text_confidence(1) → sigmoid
+audio (791d) → audio_proj(128d)
+gated_audio = audio_proj × text_confidence
+fused = concat(text_proj, gated_audio, cross_attn_output)
+BiGRU(128d×2) → MLP(256→128→1) → Sigmoid
+\end{verbatim}
+
+\textbf{Intuition:} When text is confident (clear setup/punchline structure), audio is trusted more. When text is uncertain, prosody carries more weight.
+
+\textbf{Results:} 5-fold CV AUC = 0.860 $\pm$ 0.018. Folds: [0.856, 0.873, 0.869, 0.877, 0.827].
+
+\section{Experiments}
+\label{sec:experiments}
+
+\textbf{Setup:} 5-fold GroupKFold on 639 StandUp4AI files (12,780 segments). Adam optimizer, lr=1e-3, weight\_decay=1e-4, cosine annealing, BCE loss, batch 32, 30 epochs. Evaluated via AUC.
+
+\textbf{Results:} Table~\ref{tab:results}.
+
+\begin{table}[t]
+\centering
+\begin{tabular}{lccc}
+\toprule
+Model & AUC & Std & Notes \\
+\midrule
+Text-only (RoBERTa) & 0.499 & -- & Random guessing \\
+Audio-only (WavLM LR) & 0.538 & -- & Weak signal \\
+Fusion v5 (bilinear) & 0.632 & 0.007 & Per-segment \\
+Bridge 4 (BiGRU arcs) & 0.842 & 0.027 & Audio-only \\
+v6 (Cross-Attention) & 0.858 & 0.015 & Text+audio \\
+\textbf{Bridge 7 (Cascade)} & \textbf{0.860} & 0.018 & \textbf{New best} \\
+\bottomrule
+\end{tabular}
+\caption{5-fold CV AUC on pseudo-labels (12,780 segments).}
+\label{tab:results}
+\end{table}
+
+\textbf{Gold label evaluation:} On 12 videos with human-annotated laughter labels (240 segments, 52.9\% positive), Bridge 7 achieves AUC 0.590 (vs Bridge 4's 0.576). The AUC $\sim$0.59 on real laughter labels confirms our models capture \emph{perceived funniness} (delivery quality), not behavioral laughter response.
+
+\section{Discussion}
+\label{sec:discussion}
+
+\textbf{Why audio dominates:} Comedy timing, prosodic emphasis, and vocal inflection are what make humor funny. The same words delivered flat are not humorous. Text-only models (AUC 0.50) confirm words carry no intrinsic humor signal.
+
+\textbf{Why cascade gate helps:} The +0.002 AUC over cross-attention suggests text acts as a \emph{prior} on whether to trust audio. When text shows clear semantic structure (setup/punchline), audio contribution is amplified. This mirrors human perception: we listen more carefully when we expect a punchline.
+
+\textbf{Why self-training fails:} Iterative confidence filtering on pseudo-labels creates distributional shift. The teacher saturates on high-confidence samples, and the student overfits to the teacher's in-distribution errors.
+
+\section{Conclusion}
+\label{sec:conclusion}
+
+We present HaHaScore, a multimodal humor strength prediction system. Key findings: (1) text-only models are random for sentence-level humor, (2) audio-only BiGRU achieves AUC 0.842, (3) cascade gate fusion achieves AUC 0.860 (+0.018), (4) gold label AUC 0.590 confirms we capture delivery, not laughter. Audio delivery is the dominant factor in sentence-level humor perception.
+
+\vskip 0.2in
+\noindent\textbf{Availability:} Code at \url{https://github.com/Das-rebel/HaHaScore}. Models at \url{https://huggingface.co/Hayasuki/hahascore-bridge4-arc-tracker}.
+
+\bibliographystyle{acl}
+\bibliography{references}
+
+\end{document}

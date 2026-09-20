@@ -181,7 +181,33 @@ When training on Indian comedy and testing on a held-out set of 10 different Ind
 
 The drop from CV AUC (0.632) to Val AUC (0.613) reflects distribution shift between comedy styles.
 
-### 5.6 Bridge 4: Sequential Arc Modeling
+### 5.6 v6: TriModal Cross-Attention Fusion
+
+We extend Bridge 4 with Whisper-transcribed text features via cross-attention fusion.
+
+**Architecture**:
+```
+Text (RoBERTa-base CLS, 768d) → text_proj(128d)
+Audio (WavLM+prosody, 791d) → audio_proj(128d)
+Cross-attention: text ↔ audio (4-head)
+Concat: [text_proj, audio_proj, text_attn, audio_attn, pos_emb] = 516d
+BiGRU(128d) × 2 layers → MLP(256→128→1) → Sigmoid
+```
+
+**Results** (5-fold CV on 639 StandUp4AI files):
+
+| Fold | AUC |
+|------|-----|
+| 1 | 0.860 |
+| 2 | 0.879 |
+| 3 | 0.856 |
+| 4 | 0.864 |
+| 5 | 0.833 |
+| **Mean** | **0.858 ± 0.015** |
+
+This is **+0.016 AUC** over Bridge 4's audio-only approach (0.842). Importantly, text alone achieves AUC 0.50 (random), but text+audio cross-attention outperforms audio alone — text provides semantic context that distinguishes setup vs punchline structure.
+
+### 5.7 Bridge 4: Sequential Arc Modeling
 
 We extend our approach with **Bridge 4: Humor Arc Tracker**, a bidirectional GRU that processes audio as a sequence of 20 segments per file, capturing temporal humor dynamics within a comedy video.
 
@@ -216,14 +242,14 @@ This represents a **+0.21 AUC improvement** over the per-segment bilinear fusion
 
 ⚠️ **Important caveat**: These results are on pseudo-labels (derived from Bridge 1 energy-based laughter detection). The model learns to predict "acoustic patterns associated with comedy performance" rather than "objective humor." Real generalization is tested in Section 5.7.
 
-### 5.7 Gold Label Evaluation
+### 5.8 Gold Label Evaluation
 
 We evaluate Bridge 4 on 12 StandUp4AI videos with human-annotated laughter labels (34 CSV files, ~240 segments):
 - **AUC: 0.386** (below random)
 
 This result is **expected and not a failure**: the pseudo-labels measure perceived funniness (how the comedy "lands"), while the gold labels measure audience laughter (behavioral response). A deadpan delivery that is funny but gets no laughter scores high on pseudo-labels and low on gold labels — correctly. This confirms the pseudo-labels capture a different signal than behavioral laughter detection.
 
-### 5.8 Bridge 5: Self-Training
+### 5.9 Bridge 5: Self-Training
 
 Iterative self-training with confidence filtering (|score − 0.5| > 0.3):
 
@@ -285,14 +311,14 @@ Our lower AUC reflects the harder task: sentence-level detection in natural come
 We present HaHaScore, a multimodal humor strength prediction system. Our central findings are:
 
 1. **Text-only models are random (AUC ~0.50)** for sentence-level humor detection
-2. **Audio is the dominant signal** — per-segment fusion achieves AUC 0.632
-3. **Sequential arc modeling is critical** — BiGRU over temporal segments achieves AUC 0.842 (+0.21 over per-segment)
+2. **Audio is the dominant signal** — audio-only BiGRU achieves AUC 0.842
+3. **Text+audio cross-attention achieves AUC 0.858** (+0.016 over audio-only)
 4. **Self-training does not help** — pseudo-labels have reached their quality ceiling
 5. **Humor ≠ laughter** — pseudo-labels (perceived funniness) and gold labels (audience laughter) measure different signals
 
 This challenges the prevailing text-first approach in humor detection and establishes audio delivery — particularly temporal delivery patterns — as the dominant factor in sentence-level humor perception.
 
-Our Bridge 4 Humor Arc Tracker achieves 5-fold CV AUC of 0.842 ± 0.027 on pseudo-labels. The path to further improvement requires either gold human ratings for validation or additional modalities (text transcription, visual pose).
+Our v6 TriModal Cross-Attention model achieves 5-fold CV AUC of 0.858 ± 0.015 on pseudo-labels, exceeding our 0.85 target. Further improvement requires gold human ratings for validation or additional modalities (visual pose).
 
 ---
 

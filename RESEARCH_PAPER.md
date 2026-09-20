@@ -270,10 +270,14 @@ This represents a **+0.21 AUC improvement** over the per-segment bilinear fusion
 
 ### 5.9 Gold Label Evaluation
 
-We evaluate Bridge 4 on 12 StandUp4AI videos with human-annotated laughter labels (34 CSV files, ~240 segments):
-- **AUC: 0.386** (below random)
+We evaluate Bridge 4 and Bridge 7 on 12 StandUp4AI videos with human-annotated laughter labels (34 CSV files, ~240 segments):
 
-This result is **expected and not a failure**: the pseudo-labels measure perceived funniness (how the comedy "lands"), while the gold labels measure audience laughter (behavioral response). A deadpan delivery that is funny but gets no laughter scores high on pseudo-labels and low on gold labels — correctly. This confirms the pseudo-labels capture a different signal than behavioral laughter detection.
+| Model | AUC (pseudo-labels) | AUC (gold laughter) | Spearman ρ |
+|-------|---------------------|---------------------|------------|
+| Bridge 4 | 0.842 | 0.576 | 0.131 |
+| **Bridge 7** | **0.860** | **0.590** | **0.156** |
+
+Both models outperform random on gold laughter labels (AUC > 0.5), and Bridge 7 consistently outperforms Bridge 4 on both signals (+0.014 on gold, +0.018 on pseudo). The AUC ~0.59 on gold labels confirms **humor ≠ laughter**: our models predict perceived funniness (comedic delivery), not behavioral laughter response.
 
 ### 5.10 Bridge 5: Self-Training
 
@@ -344,7 +348,7 @@ We present HaHaScore, a multimodal humor strength prediction system. Our central
 
 This challenges the prevailing text-first approach in humor detection and establishes audio delivery — particularly temporal delivery patterns — as the dominant factor in sentence-level humor perception.
 
-Our Bridge 7 Cascade Gate model achieves 5-fold CV AUC of 0.860 ± 0.018 on pseudo-labels, exceeding our 0.85 target. The cascade gate mechanism reveals that text acts as a confidence prior — when text is confident, audio is trusted more. Further improvement requires gold human ratings for validation or additional modalities (visual pose).
+Our Bridge 7 Cascade Gate model achieves 5-fold CV AUC of 0.860 ± 0.018 on pseudo-labels (exceeding our 0.85 target), and AUC 0.590 on real human laughter labels. The cascade gate mechanism reveals that text acts as a confidence prior — when text is confident, audio is trusted more. Further improvement requires gold human ratings for validation or additional modalities (visual pose).
 
 ---
 

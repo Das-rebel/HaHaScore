@@ -31,3 +31,10 @@
 - Disk at 98% capacity throughout pipeline
 - All bulk data on Google Drive
 - Local files: 5.3 GB free at end
+
+## CORAL Domain Adaptation (v2)
+- **Multi-task**: humor + laughter heads sharing v8 backbone
+- **CORAL**: covariance alignment between pseudo (source) and gold laughter (target)
+- **Result**: Humor AUC 0.809 (vs 0.802 baseline), Gold AUC 0.586 (vs 0.590 baseline)
+- Multi-task learning improves humor slightly while maintaining gold performance
+- See `drive_pipeline/train_coral_v2.py` for implementation

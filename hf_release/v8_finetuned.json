@@ -1,0 +1,13 @@
+{
+  "final_loss": 0.539692589621991,
+  "val_auc": 0.802132,
+  "n_samples": 639,
+  "epochs": 5,
+  "lr": 0.0001,
+  "batch_size": 4,
+  "reddit_model": "reddit_distilbert_v1.pt",
+  "total_steps": 800,
+  "total_params": 67546710,
+  "trainable_params": 1183830,
+  "output_name": "v8_finetuned_v1"
+}

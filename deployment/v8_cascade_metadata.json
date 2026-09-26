@@ -1,8 +1,8 @@
 {
-  "pytorch_avg_ms": 9.22229290008545,
-  "onnx_path": "v8_cascade.onnx",
-  "int8_path": "v8_cascade_int8.onnx",
-  "source_model": "v8_finetuned_full.pt",
+  "pytorch_avg_ms": 11.0914945602417,
+  "onnx_path": "v8_cascade_v1.onnx",
+  "int8_path": "v8_cascade_v1_int8.onnx",
+  "source_model": "v8_finetuned_v1.pt",
   "architecture": "EnhancedCascadeGateFusion (v8)",
   "inputs": {
     "text": "float32 (batch, 20, 768)",

@@ -1,0 +1,20 @@
+{
+  "model": "Bridge 7 Cascade Gate",
+  "architecture": "text_confidence gates audio contribution",
+  "hidden": 128,
+  "kfolds": 5,
+  "epochs": 30,
+  "mean_auc": 0.8603454411101932,
+  "std_auc": 0.018381840855124218,
+  "fold_aucs": [
+    0.8557831836005269,
+    0.8730650223297503,
+    0.869014046838644,
+    0.8773308793932074,
+    0.8265340733888374
+  ],
+  "comparison": {
+    "v6_triple_attn": 0.858,
+    "bridge7_cascade": 0.8603454411101932
+  }
+}

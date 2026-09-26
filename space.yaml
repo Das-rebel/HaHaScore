@@ -1,0 +1,19 @@
+title: HaHaScore Cascade v7
+emoji: 😂
+colorFrom: red
+colorTo: orange
+sdk: gradio
+sdk_version: 4.25.0
+python_version: 3.10
+short_description: Cascade Gate v7 — Humor Strength Predictor (AUC 0.860)
+tags:
+  - humor-detection
+  - multimodal
+  - audio-classification
+  - cascade-gate
+  - cascade-v7
+  - hahascore
+  - prosody
+  - speech-analysis
+duplicate_from: null
+license: mit

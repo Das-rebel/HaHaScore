@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HaHaScore Cascade v7 — Humor Strength Predictor</title>
+    <style>
+        * { box-sizing: border-box; }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 900px; margin: 0 auto; padding: 20px;
+            background: linear-gradient(135deg, #fff5f5 0%, #ffeaa7 100%);
+            min-height: 100vh;
+        }
+        .container { background: white; border-radius: 20px; padding: 40px; box-shadow: 0 10px 40px rgba(0,0,0,0.1); }
+        h1 { color: #FF6B6B; text-align: center; margin-bottom: 10px; }
+        .subtitle { text-align: center; color: #666; font-size: 1.2rem; margin-bottom: 30px; }
+        .badge { display: inline-block; background: #FF6B6B; color: white; padding: 6px 16px; border-radius: 20px; font-weight: bold; margin: 5px; }
+        .metric-card { 
+            background: #f8f9fa; border-radius: 12px; padding: 20px; 
+            margin: 15px 0; border-left: 4px solid #FF6B6B;
+        }
+        .metric-label { font-weight: bold; color: #333; }
+        .metric-value { font-size: 1.5rem; color: #FF6B6B; }
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #eee; }
+        th { background: #FF6B6B; color: white; }
+        tr:hover { background: #fff5f5; }
+        .section { margin: 30px 0; }
+        .section h2 { color: #333; border-bottom: 2px solid #FF6B6B; padding-bottom: 10px; }
+        .links { text-align: center; margin-top: 30px; }
+        .links a { color: #FF6B6B; text-decoration: none; margin: 0 15px; font-weight: 500; }
+        .links a:hover { text-decoration: underline; }
+        .demo-box { background: #fff3cd; border: 2px dashed #FF6B6B; border-radius: 12px; padding: 30px; text-align: center; margin: 20px 0; }
+        .demo-box h3 { color: #856404; margin-top: 0; }
+        .demo-box code { background: white; padding: 2px 8px; border-radius: 4px; }
+        .chart-placeholder { 
+            background: #f0f0f0; border-radius: 8px; padding: 60px; text-align: center; 
+            color: #999; margin: 15px 0; font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>😄 HaHaScore <span style="color:#FF6B6B">Cascade Gate v7</span></h1>
+        <p class="subtitle">Sentence-level humor strength predictor — <b>AUC 0.860 ± 0.018</b> | <b>1.04M params</b> | <b>CPU-ready</b></p>
+        
+        <div style="text-align:center;">
+            <span class="badge">New Best Model</span>
+            <span class="badge">Cascade Gate Fusion</span>
+            <span class="badge">Multimodal</span>
+            <span class="badge">Open Source</span>
+        </div>
+
+        <div class="section">
+            <h2>🏆 Performance (5-Fold CV)</h2>
+            <table>
+                <tr><th>Metric</th><th>Value</th></tr>
+                <tr><td><b>AUC (pseudo-labels)</b></td><td><b>0.860 ± 0.018</b> ✅ New Best</td></tr>
+                <tr><td>AUC (gold laughter labels)</td><td>0.590 (expected — different signal)</td></tr>
+                <tr><td>Parameters</td><td>1.04M</td></tr>
+                <tr><td>Inference</td><td>CPU (~10ms / utterance)</td></tr>
+                <tr><td>Modality</td><td>Text + Audio (Cascade Gate)</td></tr>
+            </table>
+        </div>
+
+        <div class="section">
+            <h2>🏗️ Architecture: Cascade Gate Fusion</h2>
+            <p><b>Text confidence</b> (<code>sigmoid(text_proj(768→128))</code>) → <b>gates audio contribution</b> → <b>BiGRU temporal model</b> → <b>Score (0–100)</b></p>
+            <div class="chart-placeholder">📊 Architecture Diagram (see <a href="https://huggingface.co/Hayasuki/hahascore-cascade">model repo</a> for full infographic)</div>
+        </div>
+
+        <div class="section">
+            <h2>🔬 Key Scientific Findings</h2>
+            <table>
+                <tr><th>Finding</th><th>Evidence</th><th>Implication</th></tr>
+                <tr><td>Text alone is random</td><td>AUC 0.499 (RoBERTa)</td><td>Words carry no humor signal</td></tr>
+                <tr><td>Audio dominates</td><td>AUC 0.842 (WavLM)</td><td>Delivery is everything</td></tr>
+                <tr><td>Cascade gating helps</td><td>+0.002 over cross-attention</td><td>Confidence prior > equal fusion</td></tr>
+                <tr><td>Self-training hurts</td><td>Bridge 5: no gain</td><td>Distributional shift ceiling</td></tr>
+                <tr><td>Humor ≠ Laughter</td><td>Pseudo 0.860 vs Gold 0.590</td><td>Funniness ≠ behavioral laughter</td></tr>
+            </table>
+        </div>
+
+        <div class="section">
+            <h2>🧪 Try It Locally</h2>
+            <div class="demo-box">
+                <h3>🎯 Real inference requires the feature pipeline</h3>
+                <p>Install and run locally for real predictions:</p>
+                <pre style="text-align:left; background:#2d2d2d; color:#f8f8f2; padding:15px; border-radius:8px; overflow-x:auto;">
+<code>git clone https://github.com/Das-rebel/HaHaScore
+cd HaHaScore
+pip install torch transformers librosa pydub gradio
+python cascade_inference.py</code></pre>
+                <p>Or run the Gradio demo:</p>
+                <pre style="text-align:left; background:#2d2d2d; color:#f8f8f2; padding:15px; border-radius:8px; overflow-x:auto;">
+<code>python app.py</code></pre>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>📊 Visualizations</h2>
+            <p>See the full model card for:</p>
+            <ul>
+                <li>📈 <b>Performance Comparison</b> — 6-model AUC bar chart</li>
+                <li>🎯 <b>Modality Contribution</b> — Text vs Audio vs Fusion</li>
+                <li>📉 <b>Pseudo vs Gold Labels</b> — Funniness vs Laughter gap</li>
+                <li>📊 <b>5-Fold CV Results</b> — Cascade v7 fold performance</li>
+                <li>📈 <b>Training Curve</b> — Model training progress</li>
+                <li>🔄 <b>Radar Chart</b> — Multi-dimensional comparison</li>
+                <li>🏗️ <b>Architecture Infographic</b> — Full Cascade Gate diagram</li>
+            </ul>
+        </div>
+
+        <div class="links">
+            <a href="https://huggingface.co/Hayasuki/hahascore-cascade">📦 HF Model Repo</a>
+            <a href="https://github.com/Das-rebel/HaHaScore">📁 GitHub Source</a>
+            <a href="https://arxiv.org/abs/2026.xxxxx">📄 Paper</a>
+        </div>
+    </div>
+</body>
+</html>

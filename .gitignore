@@ -22,3 +22,14 @@ __pycache__/
 *.pyc
 .pytest_cache/
 kaggle_data/upvote_jokes/
+
+# Drive pipeline temp files
+drive_pipeline/__pycache__/
+*_save/
+/tmp/v8_*
+
+# Don't commit large model artifacts (they're on Drive)
+models/*_pretrain.pt
+models/cascade_v8*.pt
+
+# ONNX models go in deployment/models for HF Space tracking

@@ -1,0 +1,91 @@
+{
+  "random_5fold": {
+    "humor_auc_mean": 0.5785555555555555,
+    "gold_auc_mean": 0.5013576388888887,
+    "humor_auc_per_fold": [
+      0.6222222222222222,
+      0.7355555555555555,
+      0.575,
+      0.4975,
+      0.46249999999999997
+    ],
+    "gold_auc_per_fold": [
+      0.26666666666666666,
+      0.45777777777777784,
+      0.90234375,
+      0.5349999999999999,
+      0.345
+    ]
+  },
+  "speaker_disjoint_5fold": {
+    "humor_auc_mean": 0.5684444444444445,
+    "gold_auc_mean": 0.38569444444444445,
+    "humor_auc_per_fold": [
+      0.6088888888888889,
+      0.5233333333333333,
+      0.6125,
+      0.44,
+      0.6575
+    ],
+    "gold_auc_per_fold": [
+      0.29625,
+      0.28555555555555556,
+      0.4325,
+      0.18500000000000003,
+      0.7291666666666665
+    ]
+  },
+  "logo_per_video": {
+    "-1FrUOEswOk,fr": {
+      "humor": 0.52,
+      "gold": 0.20999999999999996
+    },
+    "J1NYJu9ENMg,es": {
+      "humor": 0.85,
+      "gold": 0.78125
+    },
+    "JLqTpOqhGXo,es": {
+      "humor": 0.7799999999999999,
+      "gold": 0.6133333333333333
+    },
+    "LWYfo_8t5WQ,fr": {
+      "humor": 0.47000000000000003,
+      "gold": 0.17
+    },
+    "OMxKP1eBR_A,fr": {
+      "humor": 0.64,
+      "gold": 0.6000000000000001
+    },
+    "OxvCVuGQ-uk,fr": {
+      "humor": 0.61,
+      "gold": 0.19999999999999998
+    },
+    "QPywJakXcc0,fr": {
+      "humor": 0.64,
+      "gold": 0.35
+    },
+    "Xut9-fki6PU,fr": {
+      "humor": 0.37,
+      "gold": 0.22999999999999998
+    },
+    "jWrkIQHBC54,fr": {
+      "humor": 0.61,
+      "gold": 0.2
+    },
+    "l2oaxKORheA": {
+      "humor": 0.7600000000000001,
+      "gold": 0.3
+    },
+    "pcR0SFiBhTc,fr": {
+      "humor": 0.44999999999999996,
+      "gold": 0.13
+    },
+    "tRN6rYyr9Bk,es": {
+      "humor": 0.53,
+      "gold": 0.765625
+    }
+  },
+  "delta_humor_auc": 0.01011111111111096,
+  "delta_gold_auc": 0.11566319444444428,
+  "verdict": "\ud83d\udea8 ARCHITECTURE PROBLEM: model leaks comedian identity. Need comedian-adversarial loss or per-comedian normalization."
+}

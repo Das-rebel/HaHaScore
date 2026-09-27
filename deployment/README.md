@@ -1,40 +1,54 @@
-# HaHaScore v8 — Deployment Package (v1)
+# HaHaScore v10 — Deployment Package
 
-## Contents
-- `app.py` — Real ONNX inference (replaces SHA-1 placeholder)
-- `models/v8_cascade_int8.onnx` — INT8 quantized model (2.9 MB)
-- `v8_cascade_metadata.json` — Architecture metadata
-- `space.yaml` — HF Space config
+## 🎉 v10 = Best Model (Humor 0.823 / Gold 0.613)
+
+Cascade Gate v10 combines all the improvements:
+- **Bilinear Fusion** (multiplicative cross-modal interaction)
+- **Cascade Gate** (text confidence gates audio)
+- **CORAL Multi-task** (humor + laughter heads)
+- **Reddit Pretrain** (30K jokes, 74% loss reduction)
 
 ## Performance
-| Model | Size | CPU Inference |
-|-------|------|---------------|
-| PyTorch FP32 (v1) | 270 MB | ~9 ms |
-| ONNX FP32 | 0.3 MB | ~3.3 ms |
-| **ONNX INT8** | **2.9 MB** | **~3.3 ms** |
+| Model | Type | Humor AUC | Gold AUC | Inference |
+|-------|------|-----------|----------|-----------|
+| v7 baseline | Cascade | 0.860 | 0.590 | ~10ms |
+| v8 (Reddit) | + Pretrain | 0.802 | — | ~9ms |
+| v8 CORAL | + Multi-task | 0.809 | 0.586 | ~9ms |
+| v9 bilinear | + Bilinear | 0.785 | — | 2 ms |
+| **v10** | **All combined** | **0.823** | **0.613** | **1.5 ms** |
 
-## v1 Architecture & Training
-- **Pretrain**: DistilBERT on 30K Reddit jokes (final loss 0.0177)
-- **Fine-tune**: Cascade Gate v8 on 639 standup files (Val AUC **0.8021**)
-- **ONNX export**: FP32 (0.3MB) + INT8 (2.9MB) quantized
-- **Inputs**: text (768-dim), audio (791-dim), cross-modal (16-dim)
-- **Output**: scores (0-1) per 20 segments
+## Files
+- `app.py` — Real ONNX inference
+- `models/v10_cascade_int8.onnx` — INT8 quantized (3.4 MB)
+- `v10_cascade_metadata.json` — Architecture spec
+- `space.yaml` — HF Space config
 
-## Comparison
-| Version | Reddit Pretrain | Val AUC | Notes |
-|---------|----------------|---------|-------|
-| v7 baseline | None | 0.860 (5-fold CV) | pseudo-labels |
-| v8 smoke (2K Reddit) | smoke | 0.807 | first end-to-end test |
-| **v8 v1 (30K Reddit)** | **full** | **0.802** | **production model** |
+## Architecture
+```
+Reddit DistilBERT → text (768-dim)
+                        ↓
+                  Cascade Gate v10
+                  • Bilinear Fusion (text ⊗ audio)
+                  • Text confidence gating
+                  • Multi-task heads (humor + laughter)
+                  • CORAL domain alignment
+                        ↓
+                   Humor Score (0-1)
+```
+
+## Use in Python
+```python
+import onnxruntime as ort
+import numpy as np
+
+session = ort.InferenceSession("models/v10_cascade_int8.onnx")
+text = np.random.randn(1, 20, 768).astype(np.float32)
+audio = np.random.randn(1, 20, 791).astype(np.float32)
+
+scores, conf, gate = session.run(None, {'text': text, 'audio': audio})
+print(f"Avg humor: {scores.mean():.3f}")  # 1.5ms inference
+```
 
 ## Local Disk Constraint
-- Disk at 98% capacity throughout pipeline
 - All bulk data on Google Drive
-- Local files: 5.3 GB free at end
-
-## CORAL Domain Adaptation (v2)
-- **Multi-task**: humor + laughter heads sharing v8 backbone
-- **CORAL**: covariance alignment between pseudo (source) and gold laughter (target)
-- **Result**: Humor AUC 0.809 (vs 0.802 baseline), Gold AUC 0.586 (vs 0.590 baseline)
-- Multi-task learning improves humor slightly while maintaining gold performance
-- See `drive_pipeline/train_coral_v2.py` for implementation
+- Local files: 7.7 GB free

@@ -1,0 +1,7 @@
+{
+  "source_model": "v10_bilinear_coral.pt",
+  "architecture": "v9 Bilinear Fusion + CORAL Multi-task",
+  "humor_auc": 0.82254,
+  "laugh_auc": 0.6130867346938775,
+  "opset": 14
+}

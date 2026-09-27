@@ -4,9 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="description" content="HaHaScore v8 — AI-powered humor detection for YouTube videos. Paste a video URL and get instant funniness scores.">
-<meta property="og:title" content="HaHaScore Cascade v8 — Humor Strength Detector">
+<meta property="og:title" content="HaHaScore Cascade v10 — Humor Strength Detector">
 <meta property="og:description" content="AI humor detector for YouTube videos. Real-time funniness analysis per segment.">
-<title>HaHaScore Cascade v8 — AI Humor Detector for YouTube Videos</title>
+<title>HaHaScore Cascade v10 — AI Humor Detector for YouTube Videos</title>
 <link rel="preconnect" href="https://www.youtube.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
@@ -594,7 +594,7 @@
     <div class="badges">
       <span class="badge">Cascade Gate v8</span>
       <span class="badge success">Reddit-pretrained</span>
-      <span class="badge">Val AUC 0.802</span>
+      <span class="badge">Val AUC 0.823</span>
       <span class="badge warn">ONNX INT8 &lt;3ms</span>
     </div>
   </header>
@@ -698,7 +698,7 @@
   <div class="card">
     <h2><span class="icon">🤖</span> How It Works</h2>
     <p style="color: var(--text-dim); margin-bottom: 16px">
-      HaHaScore Cascade v8 uses a multimodal AI architecture that fuses text + audio cues:
+      HaHaScore Cascade v10 uses a multimodal AI architecture that fuses text + audio cues:
     </p>
     <div class="insights">
       <div class="insight">
@@ -732,8 +732,8 @@
 
 <span style="color: #64748b"># Load model</span>
 model_path = hf_hub_download(
-    repo_id=<span style="color: #6ee7b7">"Hayasuki/hahascore-cascade"</span>,
-    filename=<span style="color: #6ee7b7">"v8_cascade_int8.onnx"</span>
+    repo_id=<span style="color: #6ee7b7">"Hayasuki/hahascore-cascade-v10"</span>,
+    filename=<span style="color: #6ee7b7">"v10_cascade_int8.onnx"</span>
 )
 session = ort.InferenceSession(model_path)
 
@@ -749,7 +749,7 @@ scores, conf, gate = session.run(<span style="color: #f59e0b">None</span>, {
   </div>
 
   <footer>
-    <p>🎓 Built with <a href="https://github.com/Das-rebel/HaHaScore">HaHaScore v8</a> · <a href="https://huggingface.co/Hayasuki/hahascore-cascade">Model</a></p>
+    <p>🎓 Built with <a href="https://github.com/Das-rebel/HaHaScore">HaHaScore v8</a> · <a href="https://huggingface.co/Hayasuki/hahascore-cascade-v10">Model</a></p>
     <p style="margin-top: 8px; font-size: 0.85em; opacity: 0.7">
       Static browser-only demo · ONNX inference · MIT licensed
     </p>

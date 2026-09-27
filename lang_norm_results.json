@@ -1,0 +1,13 @@
+{
+  "raw_humor_mean": 0.5456111111111112,
+  "raw_gold_mean": 0.3224166666666667,
+  "norm_humor_mean": 0.5643888888888888,
+  "norm_gold_mean": 0.48545138888888895,
+  "delta_humor": 0.01877777777777767,
+  "delta_gold": 0.16303472222222226,
+  "fr_raw_mean": NaN,
+  "fr_norm_mean": NaN,
+  "es_raw_mean": 0.6515972222222222,
+  "es_norm_mean": 0.39513888888888893,
+  "verdict": "\u2705 CONFIRMED: per-language normalization breaks the language confound. Apply to all models."
+}

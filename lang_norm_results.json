@@ -1,13 +1,30 @@
 {
-  "raw_humor_mean": 0.5456111111111112,
-  "raw_gold_mean": 0.3224166666666667,
-  "norm_humor_mean": 0.5643888888888888,
-  "norm_gold_mean": 0.48545138888888895,
-  "delta_humor": 0.01877777777777767,
-  "delta_gold": 0.16303472222222226,
-  "fr_raw_mean": NaN,
-  "fr_norm_mean": NaN,
-  "es_raw_mean": 0.6515972222222222,
-  "es_norm_mean": 0.39513888888888893,
-  "verdict": "\u2705 CONFIRMED: per-language normalization breaks the language confound. Apply to all models."
+  "_warning": "FALSIFIED by 5x3 repeated CV (see 5x3_cv_results.json). The +0.163 single-fold result was fold-luck. Across 15 measurements, per-language normalization HURTS gold AUC by -0.127 (p=0.0004). DO NOT cite +0.163 as a finding. DO NOT add this fix to any model without proper multi-seed validation.",
+  "single_5fold_seed_42": {
+    "raw_humor_mean": 0.5456,
+    "raw_gold_mean": 0.3224,
+    "norm_humor_mean": 0.5644,
+    "norm_gold_mean": 0.4855,
+    "delta_humor": 0.019,
+    "delta_gold": 0.163,
+    "es_raw_mean": 0.6516,
+    "es_norm_mean": 0.3951,
+    "fr_raw_mean": null,
+    "fr_norm_mean": null,
+    "verdict": "FALSIFIED — single 5-fold CV at seed=42 was lucky"
+  },
+  "5x3_repeated_cv_falsification": {
+    "raw_gold_mean": 0.6493,
+    "raw_gold_std": 0.1422,
+    "norm_gold_mean": 0.5222,
+    "norm_gold_std": 0.1564,
+    "delta_mean": -0.1271,
+    "delta_std": 0.1033,
+    "paired_t": -4.606,
+    "paired_p": 0.0004,
+    "bootstrap_ci_low": -0.1829,
+    "bootstrap_ci_high": -0.0780,
+    "verdict": "INSUFFICIENT — 12-video result was fold-luck. Drop per-language norm claim."
+  },
+  "_methodology_lesson": "Per ChuckleNet v20_gate_forensics memory: ALWAYS use PR-AUC (not F1@0.5 or AUC) when positive class rate is <2%. Single-fold metrics on imbalanced data are unreliable. Required: multi-seed repeated CV with bootstrap CIs before any AUC claim. The v10 model was already using per-language statistics in a useful way; subtracting the mean destroyed that signal."
 }

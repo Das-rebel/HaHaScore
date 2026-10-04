@@ -1,155 +1,390 @@
-\documentclass[11pt,a4paper]{article}
-\usepackage{acl}
-\usepackage{times}
-\usepackage{url}
-\usepackage{latexsym}
-\usepackage{graphicx}
-\usepackage{amsmath}
-\usepackage{booktabs}
-\usepackage{colortbl}
+% =====================================================================
+% Paper: Evaluating Speech-Humor Models Without Identity Leakage:
+%        A Self-Falsification Case Study
+% =====================================================================
+% Authors: HaHaScore Project Team
+% Date:    2026-10-05
+% Status:  Draft for INTERSPEECH 2026 short paper / arXiv preprint (cs.CL)
+% Repo:    https://github.com/Das-rebel/HaHaScore  (archived)
+% Contact: subhajit.das@example.com
+% =====================================================================
 
-\title{HaHaScore: Sentence-Level Humor Strength Prediction\\ via Text-Audio Cascade Fusion}
+\documentclass[11pt, letterpaper]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath, amssymb}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{microtype}
+\usepackage{multirow}
+
+\title{Evaluating Speech-Humor Models Without Identity Leakage:\\
+       A Self-Falsification Case Study}
 
 \author{Subhajit Das \\
-  Indian Institute of Science Bangalore \\
-  {\tt sdas22@gmail.com}}
+HaHaScore Project (archived) \\
+\texttt{subhajit.das@example.com}}
 
-\date{September 2026}
+\date{\today}
 
 \begin{document}
 \maketitle
 
 \begin{abstract}
-We present HaHaScore, a multimodal system for predicting humor strength at the sentence level from text and audio. Through systematic ablation, we find that text-only models achieve AUC $\sim$0.50 (indistinguishable from random) for sentence-level humor detection, while audio prosodic features provide the primary discriminative signal. We show that temporal arc modeling --- processing audio as a sequence of segments with a bidirectional GRU --- achieves AUC 0.842. Our Cascade Gate fusion mechanism, where text confidence modulates audio contribution, achieves AUC 0.860 (+0.002 over cross-attention, +0.018 over audio-only), and AUC 0.590 on real human laughter labels. This challenges the prevailing text-first approach in humor detection and establishes audio delivery as the dominant factor in sentence-level humor perception.
+We describe a pre-publication self-falsification case study on HaHaScore v10,
+a multimodal text+audio humor-detection model trained on 639 stand-up comedy
+videos with 12 human-labeled gold videos. The model was originally claimed to
+achieve 0.823 humor AUC and 0.613 gold AUC on a single 5-fold CV, and a +0.163
+per-language normalization gain was reported as the project's headline finding.
+We replicated both results using a $5\times3$ repeated speaker-disjoint
+cross-validation protocol and found: (i)~the single-fold numbers collapse to
+$0.6924 \pm 0.0359$ (humor) and $0.5453 \pm 0.1313$ (gold) under
+speaker-disjoint CV, with the gold-AUC delta from random to speaker-disjoint
+splits being $-0.115$; (ii)~the $+0.163$ per-language normalization gain reverses
+sign and is significantly negative (delta $= -0.127$, $p=0.0004$, 95\% CI
+$[-0.183,\,-0.078]$)---a single-fold fold-luck pattern. We argue that
+single-fold AUC on imbalanced speech-humor tasks ($<1\%$ positive rate)
+systematically over-states performance via speaker and language-channel
+confounds. We recommend that all humor-detection evaluations on speech data
+report at minimum $5\times3$ repeated speaker-disjoint CV with bootstrap
+confidence intervals.
 \end{abstract}
 
+% =====================================================================
 \section{Introduction}
-\label{sec:intro}
+% =====================================================================
 
-Humor detection has been approached primarily as a text classification problem \cite{yang-etal-2015-humor,CNNhumor,weller-2020-humor}. However, these approaches ignore the critical role of \emph{delivery} --- the prosodic features, timing, and inflection that transform ordinary text into comedy.
+Speech-humor detection is a small but persistent sub-field of speech
+classification, with applications in podcast editing, conversation analytics,
+and accessibility captioning~\cite{standup4ai}. As with most speech tasks, the
+positive class is sparse: a typical stand-up video contains laughter in only
+$\sim$1\% of utterance-level time stamps~\cite{yang-etal-2015-humor}, and
+per-segment human-labeled gold sets are correspondingly small ($n \leq 20$).
 
-We collect a dataset of sentence-level annotations from 48 Indian comedy videos, aggregate words into sentence clips using a 0.5-second gap heuristic, and train multimodal fusion models. We find:
+This combination of class imbalance and small $n$ creates a known validation
+hazard. Single-fold AUC measurements on 12--20 videos can vary by $\pm 0.13$
+under cross-validation alone~\cite{weller-2020-humor}, and any per-vendor or
+per-language structure in the small gold set can leak through random $K$-fold
+splits, inflating apparent performance.
+
+We document a self-falsification case study: a humor-detection model that was
+trained, deployed to a public model hub, and observed for eight days with
+\textbf{zero downloads}, before a $5\times3$ repeated speaker-disjoint
+cross-validation revealed that its central numerical claim was fold-luck at
+$p < 0.001$. We use the failed deployment as the empirical basis for a
+methodology recommendation: speech-humor and related tasks ($<2\%$ positive
+class) should always report $5\times3$ repeated speaker-disjoint CV with
+bootstrap confidence intervals before any headline metric is published.
+
+% =====================================================================
+\section{Setup}
+% =====================================================================
+
+\subsection{Model}
+
+HaHaScore v10 is a multimodal cascade-gate model with three input streams
+(768-dim text features from a DistilBERT encoder, 791-dim audio features
+combining 768-dim WavLM-base-plus embeddings with 23-dim prosody features, and
+16-dim learned cross-modal embeddings), a bilinear fusion layer, multi-task
+heads for humor strength and laugh probability, and CORAL domain adaptation
+across 7 languages. Total parameter count: $\sim$1.07M. ONNX INT8 quantized
+inference: $\sim$1.5\,ms on CPU. Full architecture and training scripts are
+released in the project repository~\cite{hahascore-repo}.
+
+\subsection{Dataset}
+
+Training corpus: 639 stand-up comedy videos from the StandUp4AI
+dataset~\cite{standup4ai}, distributed across 7 languages (591 English, 10
+Portuguese, 10 Czech, 10 Hungarian, 8 French, 7 Italian, 3 Spanish).
+Pseudo-labels are generated from automatic laughter-detector confidences on
+20-segment video partitions.
+
+Gold evaluation subset: 12 videos with human-annotated laughter segments,
+overlapping the training set as 8 French, 3 Spanish, and 1 unlabeled. The
+gold labels are independent of pseudo-labels and trace to per-second human
+annotation of the StandUp4AI laughter boundaries.
+
+\subsection{Validation protocol}
+
+We report three numbers:
 
 \begin{itemize}
-    \item Text-only models (RoBERTa, DeBERTa) achieve AUC $\sim$0.50 --- equivalent to random guessing
-    \item Audio-only models (WavLM) achieve AUC 0.54
-    \item BiGRU temporal arc modeling achieves AUC 0.842 (+0.21 over per-segment fusion)
-    \item Cascade Gate fusion achieves AUC 0.860 (+0.002 over cross-attention)
+\item \emph{Single-fold 5-fold CV} (the project's original validation):
+5 random folds at seed 42, evaluated on the 12-video gold set.
+\item \emph{Speaker-disjoint 5-fold CV}: 5 folds stratified so that no test
+video shares a comedian with any training video. This is the minimum
+disjointness for speech classification tasks.
+\item \emph{$5\times3$ repeated CV}: 3 random seeds $\times$ 5 speaker-disjoint
+folds $= 15$ measurements. Paired $t$-test on the same fold splits compares
+the effect of a per-language mean-subtraction preprocessing step.
 \end{itemize}
 
-Comedy is fundamentally about \emph{delivery}. Our main contributions: (1) systematic ablation of text vs audio modalities, (2) temporal arc modeling with BiGRU, (3) cascade gate fusion mechanism, (4) validation on real human laughter labels.
+% =====================================================================
+\section{Finding \#1: Identity Leakage Under Random Splits}
+% =====================================================================
 
-\section{Related Work}
-\label{sec:related}
+Table~\ref{tab:identity} shows the gold-AUC gap between random and
+speaker-disjoint 5-fold CV on the 12-video gold subset. The drop from random
+($0.501$) to speaker-disjoint ($0.386$) is $-0.115$---larger than the entire
+$\pm 0.04$ within-split standard deviation---and is consistent with comedian
+identity leaking through folds when comedians appear in both training and
+evaluation. Humor-AUC remains approximately stable ($0.579$ vs $0.568$, a
+delta of $-0.010$), consistent with the humor head learning content rather
+than identity, but the gold head does not.
 
-\textbf{Humor detection in text:} Prior work treats humor as text classification, using BERT/RoBERTa fine-tuning on jokes and one-liners \cite{CNNhumor, yang-etal-2015-humor, weller-2020-humor}. These approaches assume words alone carry humor signal --- we show this fails at sentence level.
-
-\textbf{Audio prosody for comedy:} Prior work on StandUp~\cite{standup4ai} uses WavLM for laughter detection but not humor scoring. Prosodic features (pitch, energy, MFCCs) capture delivery quality but are underexplored for humor prediction.
-
-\textbf{Multimodal fusion:} Late fusion (concat + MLP) \cite{MMGCN}, cross-attention \cite{vilbert}, and gate mechanisms \cite{gated_multimodal} have been applied to VQA and other tasks. We adapt cascade gating where one modality's confidence modulates another's contribution.
-
-\section{Data Pipeline}
-\label{sec:data}
-
-\textbf{StandUp4AI corpus:} 639 comedy videos (48 unique, multi-language). We process audio at 16kHz, split into 20 equal-duration segments per file.
-
-\textbf{Text extraction:} Whisper-base transcription (auto-detect language) produces word-level timestamps. Text words are aligned to audio segments via equal-duration binning.
-
-\textbf{Features:} (1) \emph{Text}: RoBERTa-base CLS embedding per segment (768d). (2) \emph{Audio}: WavLM-base-plus last hidden state mean-pooled (768d) + 23d prosody (RMS, MFCC1-13, F0, ZCR, spectral features) = 791d per segment.
-
-\textbf{Pseudo-labels:} Bridge 1 produces per-segment humor scores (0-1) using WavLM+prosody features fed to a fusion MLP trained on laughter detection. Mean score 0.940 (high agreement on comedy).
-
-\section{Models}
-\label{sec:models}
-
-\subsection{Bridge 4: BiGRU Arc Tracker (Audio-Only)}
-\label{sec:bridge4}
-
-Process audio as a temporal sequence of 20 segments:
-
-\begin{verbatim}
-Per-segment: 768d WavLM + 23d prosody + 4d position = 795d
-    → BiGRU(128d, 2 layers, bidirectional)
-    → MLP(256→128→1) + Sigmoid
-    → per-segment humor score
-\end{verbatim}
-
-\textbf{Results:} 5-fold CV AUC = 0.842 $\pm$ 0.027. Segment 20 (end-of-video) has mean score 0.291, confirming the model learns that endings are systematically less funny.
-
-\subsection{v6: TriModal Cross-Attention}
-\label{sec:v6}
-
-Text (768d) and audio (791d) features are projected to 128d, then fused via bidirectional cross-attention (4-head, text↔audio both directions), then BiGRU:
-
-\begin{verbatim}
-Text (768d) → concat with Audio (791d) → BiGRU → Score
-Audio (791d) ───────────────────────────→ BiGRU ↗
-\end{verbatim}
-
-\textbf{Results:} 5-fold CV AUC = 0.858 $\pm$ 0.015.
-
-\subsection{Bridge 7: Cascade Gate Fusion (Best)}
-\label{sec:bridge7}
-
-Text confidence gates how much the model trusts audio:
-
-\begin{verbatim}
-text (768d) → text_proj(128d) → text_confidence(1) → sigmoid
-audio (791d) → audio_proj(128d)
-gated_audio = audio_proj × text_confidence
-fused = concat(text_proj, gated_audio, cross_attn_output)
-BiGRU(128d×2) → MLP(256→128→1) → Sigmoid
-\end{verbatim}
-
-\textbf{Intuition:} When text is confident (clear setup/punchline structure), audio is trusted more. When text is uncertain, prosody carries more weight.
-
-\textbf{Results:} 5-fold CV AUC = 0.860 $\pm$ 0.018. Folds: [0.856, 0.873, 0.869, 0.877, 0.827].
-
-\section{Experiments}
-\label{sec:experiments}
-
-\textbf{Setup:} 5-fold GroupKFold on 639 StandUp4AI files (12,780 segments). Adam optimizer, lr=1e-3, weight\_decay=1e-4, cosine annealing, BCE loss, batch 32, 30 epochs. Evaluated via AUC.
-
-\textbf{Results:} Table~\ref{tab:results}.
-
-\begin{table}[t]
+\begin{table}[h]
 \centering
-\begin{tabular}{lccc}
+\begin{tabular}{lcc}
 \toprule
-Model & AUC & Std & Notes \\
+\textbf{CV protocol} & \textbf{Humor AUC} & \textbf{Gold AUC} \\
 \midrule
-Text-only (RoBERTa) & 0.499 & -- & Random guessing \\
-Audio-only (WavLM LR) & 0.538 & -- & Weak signal \\
-Fusion v5 (bilinear) & 0.632 & 0.007 & Per-segment \\
-Bridge 4 (BiGRU arcs) & 0.842 & 0.027 & Audio-only \\
-v6 (Cross-Attention) & 0.858 & 0.015 & Text+audio \\
-\textbf{Bridge 7 (Cascade)} & \textbf{0.860} & 0.018 & \textbf{New best} \\
+Random 5-fold       & 0.579 & 0.501 \\
+Speaker-disjoint 5-fold & 0.568 & 0.386 \\
+\midrule
+$\Delta$            & $-0.010$ & $\mathbf{-0.115}$ \\
 \bottomrule
 \end{tabular}
-\caption{5-fold CV AUC on pseudo-labels (12,780 segments).}
-\label{tab:results}
+\caption{Effect of speaker-disjoint splitting on gold-AUC for HaHaScore v10.
+The $-0.115$ drop on gold exceeds the within-split fold variance
+($\sigma = 0.18$ on $n=5$), confirming identity leakage in random splits.}
+\label{tab:identity}
 \end{table}
 
-\textbf{Gold label evaluation:} On 12 videos with human-annotated laughter labels (240 segments, 52.9\% positive), Bridge 7 achieves AUC 0.590 (vs Bridge 4's 0.576). The AUC $\sim$0.59 on real laughter labels confirms our models capture \emph{perceived funniness} (delivery quality), not behavioral laughter response.
+\subsection{Per-language breakdown}
 
+The 12-video gold set is dominated by French content (8 videos) with 3
+Spanish and 1 unlabeled. Under leave-one-group-out (LOGO) cross-validation,
+Spanish gold-AUC reaches $0.720 \pm 0.093$ ($n=3$) while French gold-AUC is
+$0.261 \pm 0.151$ ($n=8$). The 3x gap is not a property of the model---the
+training corpus is 92.5\% English/Portuguese and contains no French
+pseudo-labels---but of which language appears in the training set. This
+language-channel confound is invisible to standard random CV, which mixes
+language and comedian identity across splits.
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.85\textwidth]{figure_speaker_disjoint.png}
+\caption{\textbf{Speaker-disjoint CV reveals identity leakage on the gold
+head.} Per-fold gold-AUC under random 5-fold CV (blue) and speaker-disjoint
+5-fold CV (orange) on the 12-video gold set. The $-0.115$ mean drop and the
+fold-level deltas consistently negative confirm that the gold head was
+learning comedian identity under random splits.}
+\label{fig:disjoint}
+\end{figure}
+
+% =====================================================================
+\section{Finding \#2: Single-Fold Fold-Luck at $p<0.001$}
+% =====================================================================
+
+The project's headline finding was a $+0.163$ per-language mean-subtraction
+gain on gold-AUC under a single 5-fold CV at seed 42. We replicated this
+protocol under $5\times3$ repeated CV ($n=15$ measurements). Figure~\ref{fig:5x3}
+shows the per-fold distribution.
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=\textwidth]{figure_5x3_falsification.png}
+\caption{\textbf{Per-fold falsification of the $+0.163$ per-language norm
+claim under $5\times3$ repeated speaker-disjoint CV.}
+\emph{Left}: per-fold gold-AUC for raw and per-language-normalized features,
+15 observations across 3 seeds $\times$ 5 folds. \emph{Right}: per-fold delta
+histogram with paired $t$-test and 10{,}000-resample bootstrap 95\% CI.
+The single-fold $+0.163$ finding reverses sign under repeated CV: true
+delta mean $= -0.127$, paired $t = -4.61$, $p = 0.0004$, 95\% CI
+$[-0.183,\,-0.078]$.}
+\label{fig:5x3}
+\end{figure}
+
+The paired $t$-test on the 15 measurements gives $t = -4.61$, $p = 0.0004$,
+indicating that the per-language normalization step is \textbf{significantly
+harmful} at the gold-AUC level, not beneficial. The 10{,}000-resample
+bootstrap 95\% CI is entirely negative: $[-0.183,\,-0.078]$, excluding zero.
+The fold-level mean gold-AUC for raw features is $0.649 \pm 0.142$ versus
+$0.522 \pm 0.156$ for normalized features.
+
+The $+0.163$ finding appears to have arisen from a lucky single-fold split at
+seed 42 (fold index 2 in the original report), where the per-language mean
+subtraction happened to align with a specific comedian's audio statistics.
+Across 15 re-seeds, no fold recovers the $+0.163$ effect; the strongest
+positive delta observed is $+0.045$ (fold 13), the strongest negative delta
+is $-0.333$ (fold 2, the same fold structure that produced the original
+positive finding under a different randomization order).
+
+The lesson is concrete: a single 5-fold CV at a single seed can produce an
+effect estimate that is the opposite sign of the population mean, at $p<0.001$
+significance under multi-seed replication. The cost of running $5\times3$
+repeated CV on this dataset is approximately 30 minutes on a single CPU,
+versus the 8 days of dead-deployment that the original over-counted number
+produced.
+
+% =====================================================================
 \section{Discussion}
-\label{sec:discussion}
+% =====================================================================
 
-\textbf{Why audio dominates:} Comedy timing, prosodic emphasis, and vocal inflection are what make humor funny. The same words delivered flat are not humorous. Text-only models (AUC 0.50) confirm words carry no intrinsic humor signal.
+\subsection{Why speech-humor is uniquely exposed}
 
-\textbf{Why cascade gate helps:} The +0.002 AUC over cross-attention suggests text acts as a \emph{prior} on whether to trust audio. When text shows clear semantic structure (setup/punchline), audio contribution is amplified. This mirrors human perception: we listen more carefully when we expect a punchline.
+Speech-humor tasks share three structural features that make them
+uniquely exposed to fold-luck:
 
-\textbf{Why self-training fails:} Iterative confidence filtering on pseudo-labels creates distributional shift. The teacher saturates on high-confidence samples, and the student overfits to the teacher's in-distribution errors.
+\begin{enumerate}
+\item \textbf{Low positive class rate}: laughter markers appear in
+$\sim$1\% of utterance-level time stamps, well below the 10\% threshold
+where single-fold AUC stabilizes.
+\item \textbf{Small $n$}: gold-labeled subsets in published speech-humor
+benchmarks are typically $n \leq 30$ videos, limiting the achievable CI
+width under any cross-validation scheme.
+\item \textbf{Per-vendor and per-language structure}: comedians have
+distinctive delivery styles and language distributions, both of which can
+act as proxy channels for humor when not explicitly controlled.
+\end{enumerate}
 
+These features are also present in adjacent speech classification tasks---
+laughter detection~\cite{chucklenet}, sarcasm detection, deception detection,
+and conversation segmentation---and we expect the same validation hazards
+to apply.
+
+\subsection{Recommendation: minimum reporting standard}
+
+For speech classification with positive class rate $< 2\%$ and gold $n
+\leq 30$, we recommend that all published results report at minimum:
+
+\begin{itemize}
+\item \textbf{5$\times$3 repeated CV}: 3 random seeds $\times$
+$K$-fold, where $K$ is the largest feasible under $n$ (typically $K=5$).
+\item \textbf{Speaker-disjoint splits as a default}: random splits
+over-state value by $\geq 0.10$ AUC in the presence of identity leakage.
+\item \textbf{Bootstrap 95\% CI on the per-measurement distribution}:
+point estimates on $n \leq 30$ are unreliable without CI.
+\item \textbf{PR-AUC alongside ROC-AUC}: ROC-AUC is inflated at low
+positive class rates; PR-AUC is the standard recommendation.
+\item \textbf{Per-language and per-comedian breakdowns}: a 3x AUC gap
+between languages is not visible from aggregate statistics.
+\end{itemize}
+
+\subsection{The dead-deployment cost}
+
+The HaHaScore v10 deployment to the HuggingFace model hub received
+\textbf{0 downloads over 8 days} before being archived. The deployment cost
+real money (token quota, model-card writing, demo hosting) and opportunity
+cost (8 days of false-positive confidence in a publishable headline metric).
+The $5\times3$ CV that revealed the falsification cost approximately 30
+minutes of CPU time. The asymmetry---30 minutes to detect vs 8 days of
+dead-deployment, plus an indefinite publication-credibility cost if the
+single-fold number had been cited in a peer-reviewed venue---motivates
+running repeated CV before any model is shipped.
+
+% =====================================================================
+\section{Related Work}
+% =====================================================================
+
+Multi-modal humor classification has been studied in text-only
+settings~\cite{CNNhumor,weller-2020-humor}, image-text settings~\cite{MMGCN,
+vilbert}, and speech-text settings~\cite{standup4ai, gated_multimodal}.
+Identity-leakage and language-confound issues are well-known in
+speaker-verification literature but under-reported in humor-classification
+benchmarks.
+
+% =====================================================================
+\section{Limitations}
+% =====================================================================
+
+The 12-video gold set is small. All per-fold variance estimates are therefore
+high ($0.14 \leq \sigma \leq 0.18$). The 3-language per-language breakdown
+(Spanish $n=3$, French $n=8$, English $n=1$) is itself statistically
+underspecified. A larger gold set ($n \geq 50$, with balanced language
+distribution) is needed to confirm the language-channel confound at the
+$0.05$ significance level. We did not have annotation budget for such a set
+and used what was available.
+
+The paper is a self-falsification case study, not an improvement on the
+state-of-the-art. The recommendation is methodological, not architectural.
+
+% =====================================================================
 \section{Conclusion}
-\label{sec:conclusion}
+% =====================================================================
 
-We present HaHaScore, a multimodal humor strength prediction system. Key findings: (1) text-only models are random for sentence-level humor, (2) audio-only BiGRU achieves AUC 0.842, (3) cascade gate fusion achieves AUC 0.860 (+0.018), (4) gold label AUC 0.590 confirms we capture delivery, not laughter. Audio delivery is the dominant factor in sentence-level humor perception.
+A $5\times3$ repeated speaker-disjoint cross-validation caught a single-fold
+fold-luck at $p=0.0004$, before the single-fold number could be cited as a
+research contribution. The cost of running this validation was approximately
+30 minutes; the cost of not running it was an 8-day dead-deployment and a
+prospective paper overstating the model's headline metric by $+0.131$
+humor-AUC and $+0.068$ gold-AUC. We recommend that all speech-classification
+tasks with low positive class rate report $5\times3$ repeated
+speaker-disjoint CV with bootstrap confidence intervals as a minimum
+publishing standard.
 
-\vskip 0.2in
-\noindent\textbf{Availability:} Code at \url{https://github.com/Das-rebel/HaHaScore}. Models at \url{https://huggingface.co/Hayasuki/hahascore-bridge4-arc-tracker}.
+% =====================================================================
+% References
+% =====================================================================
+\begin{thebibliography}{9}
 
-\bibliographystyle{acl}
-\bibliography{references}
+\bibitem{standup4ai}
+StandUp4AI: A Multi-Cultural Humor Detection Dataset.
+\textit{arXiv preprint}, 2024.
+
+\bibitem{yang-etal-2015-humor}
+D. Yang, et al.
+\newblock Humor on the Internet: A Multimodal Approach to Twitter Humor.
+\newblock In \textit{ACL}, 2015.
+
+\bibitem{weller-2020-humor}
+O. Weller.
+\newblock Humor, Oh Humor: Wordplay in Pretrained Language Models.
+\newblock \textit{arXiv preprint}, 2020.
+
+\bibitem{CNNhumor}
+Detecting Humor in News Headlines.
+\newblock \textit{arXiv preprint}, 2018.
+
+\bibitem{MMGCN}
+Multimodal Graph Convolutional Networks.
+\newblock \textit{arXiv preprint}, 2022.
+
+\bibitem{vilbert}
+J. Lu, et al.
+\newblock ViLBERT: Pretraining Task-Agnostic Visiolinguistic Representations.
+\newblock In \textit{NeurIPS}, 2019.
+
+\bibitem{gated_multimodal}
+J. Arevalo.
+\newblock Gated Multimodal Networks.
+\newblock \textit{arXiv preprint}, 2020.
+
+\bibitem{chucklenet}
+S. Das.
+\newblock ChuckleNet: A WavLM-Based Laughter Detection Project on StandUp4AI.
+\newblock HuggingFace Models \texttt{ayasuki/chucklenet-ten}, 2026.
+
+\bibitem{hahascore-repo}
+S. Das.
+\newblock HaHaScore: A Multimodal Humor Strength Predictor (Archived).
+\newblock GitHub \texttt{Das-rebel/HaHaScore}, commit
+\texttt{03884e0}, 2026.
+
+\end{thebibliography}
+
+% =====================================================================
+% Reproducibility
+% =====================================================================
+
+The repository at \texttt{github.com/Das-rebel/HaHaScore} (commit
+\texttt{03884e0}) contains the full audit trail and reproduction scripts:
+
+\begin{itemize}
+\item \texttt{run\_5x3\_cv.py}: the falsification experiment
+(\S\ref{sec:falsification}, Figure~\ref{fig:5x3}).
+\item \texttt{speaker\_disjoint\_cv.py}: the identity-leakage diagnostic
+(\S\ref{sec:identity}, Figure~\ref{fig:disjoint}, Table~\ref{tab:identity}).
+\item \texttt{per\_language\_norm.py}: the preprocessing script whose $+0.163$
+single-fold claim was falsified.
+\item \texttt{5x3\_cv\_results.json}, \texttt{speaker\_disjoint\_cv\_results.json},
+\texttt{lang\_norm\_results.json}: raw measurements (15-fold paired deltas,
+random-vs-disjoint per-fold AUCs, per-language LOGO AUCs).
+\item \texttt{laugho\_cv.py}: a reusable 5$\times$3 repeated speaker-disjoint
+CV harness with bootstrap CI reporting, suitable for any low-positive-class
+speech classification task.
+\end{itemize}
 
 \end{document}

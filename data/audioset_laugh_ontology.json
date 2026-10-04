@@ -1,0 +1,138 @@
+{
+  "source": "https://huggingface.co/datasets/agkphysics/AudioSet/resolve/main/ontology.json",
+  "license": "CC-BY-4.0",
+  "total_entries": 632,
+  "laugh_entries": [
+    {
+      "id": "/m/01j3sz",
+      "name": "Laughter",
+      "description": "The sound of rhythmical contractions of the diaphragm in response to stimuli such as tickling, or from humorous stories or thoughts.",
+      "citation_uri": "http://en.wikipedia.org/wiki/Laughter",
+      "positive_examples": [
+        "youtu.be/37hqUFpvl6A?start=40&end=50",
+        "youtu.be/sjAKBnCgKt8?start=220&end=230",
+        "youtu.be/ULTB6y2aj8I?start=40&end=50",
+        "youtu.be/c0V_HAul7rI?start=30&end=40",
+        "youtu.be/SwZ0V8bc2QY?start=350&end=360",
+        "youtu.be/aXS2iHSQE6g?start=10&end=20",
+        "youtu.be/O1snVHXG2j4?start=390&end=400",
+        "youtu.be/4e-qMxrus0A?start=80&end=90",
+        "youtu.be/rPV1mbwWms0?start=60&end=70"
+      ],
+      "child_ids": [
+        "/t/dd00001",
+        "/m/07r660_",
+        "/m/07s04w4",
+        "/m/07sq110",
+        "/m/07rgt08"
+      ],
+      "restrictions": []
+    },
+    {
+      "id": "/t/dd00001",
+      "name": "Baby laughter",
+      "description": "Laughter that is produced by a baby or infant.",
+      "citation_uri": "",
+      "positive_examples": [
+        "youtu.be/2ZqInEYQDOM?start=30&end=40",
+        "youtu.be/BRtGk2YmdJ0?start=20&end=30",
+        "youtu.be/T89y6lwH1Zg?start=30&end=40",
+        "youtu.be/lwb96iGdhZs?start=210&end=220",
+        "youtu.be/m2OBZqJ8qgI?start=90&end=100",
+        "youtu.be/kykRU_67e94?start=20&end=30",
+        "youtu.be/RLiHf1zIuXY?start=50&end=60",
+        "youtu.be/3dh5bfCN4Hs?start=10&end=20"
+      ],
+      "child_ids": [],
+      "restrictions": []
+    },
+    {
+      "id": "/m/07r660_",
+      "name": "Giggle",
+      "description": "A foolish or nervous laugh.",
+      "citation_uri": "http://wordnetweb.princeton.edu/perl/webwn?s=giggle",
+      "positive_examples": [
+        "youtu.be/XviVGrbiUmE?start=240&end=250",
+        "youtu.be/UW7ioxBkBvc?start=410&end=420",
+        "youtu.be/RDAnjeHmW5o?start=30&end=40",
+        "youtu.be/fvg6SM8hnwM?start=30&end=40",
+        "youtu.be/Ts-Y1-FHnUo?start=30&end=40",
+        "youtu.be/K4sqsDcUfGM?start=30&end=40",
+        "youtu.be/8DTw8Udr4rA?start=80&end=90"
+      ],
+      "child_ids": [],
+      "restrictions": []
+    },
+    {
+      "id": "/m/07s04w4",
+      "name": "Snicker",
+      "description": "A disrespectful laugh.",
+      "citation_uri": "http://wordnetweb.princeton.edu/perl/webwn?s=snicker",
+      "positive_examples": [
+        "youtu.be/0Xsny5M-hyE?start=140&end=150",
+        "youtu.be/2sDFQiVB67I?start=80&end=90",
+        "youtu.be/PgiVYe0HbNg?start=290&end=300",
+        "youtu.be/ZMwa1h1Aa8I?start=30&end=40"
+      ],
+      "child_ids": [],
+      "restrictions": []
+    },
+    {
+      "id": "/m/07sq110",
+      "name": "Belly laugh",
+      "description": "Very loud and abrupt laughter that encompasses much of the body.",
+      "citation_uri": "http://wordnetweb.princeton.edu/perl/webwn?s=belly%20laugh",
+      "positive_examples": [
+        "youtu.be/x2guhF8m53o?start=90&end=100",
+        "youtu.be/og_nfmnT-xA?start=180&end=190",
+        "youtu.be/NUNcvnesc2I?start=310&end=320",
+        "youtu.be/sWXpzTZWNAI?start=30&end=40",
+        "youtu.be/I-XNolOQ1JQ?start=330&end=340",
+        "youtu.be/h_zv_bxqtAM?start=440&end=450"
+      ],
+      "child_ids": [],
+      "restrictions": []
+    },
+    {
+      "id": "/m/07rgt08",
+      "name": "Chuckle, chortle",
+      "description": "Laugh quietly or with restraint.",
+      "citation_uri": "http://wordnetweb.princeton.edu/perl/webwn?s=chuckle",
+      "positive_examples": [
+        "youtu.be/C9WWt3dS1I8?start=50&end=60",
+        "youtu.be/-iq2dAKozlc?start=50&end=60",
+        "youtu.be/B_6FPEmhH70?start=40&end=50",
+        "youtu.be/_zkfG4uVqA4?start=110&end=120",
+        "youtu.be/XeKzuoN62QM?start=40&end=50",
+        "youtu.be/3Ri8_DHI4fQ?start=30&end=40",
+        "youtu.be/0WOwZJ9G2N8?start=110&end=120"
+      ],
+      "child_ids": [],
+      "restrictions": []
+    },
+    {
+      "id": "/m/07q0yl5",
+      "name": "Snort",
+      "description": "The sound of a single, hard exhalation through the nose.",
+      "citation_uri": "http://wordnetweb.princeton.edu/perl/webwn?s=snort",
+      "positive_examples": [
+        "youtu.be/2PXcJCAVf38?start=50&end=60",
+        "youtu.be/AJIRlmjloBo?start=300&end=310",
+        "youtu.be/3xvs8X-u8NA?start=140&end=150",
+        "youtu.be/fSilzq77oTE?start=30&end=40"
+      ],
+      "child_ids": [],
+      "restrictions": []
+    },
+    {
+      "id": "/t/dd00139",
+      "name": "Snort (horse)",
+      "description": "The sound of a rapid exhale through a horse's nose.",
+      "citation_uri": "http://wordnetweb.princeton.edu/perl/webwn?s=snort",
+      "positive_examples": [],
+      "child_ids": [],
+      "restrictions": []
+    }
+  ],
+  "laughter_class_count": 8
+}

@@ -1,0 +1,24 @@
+{
+  "id": "subhajitdas/v1-laugho-jester-regression",
+  "title": "v1 HaHaScore: text-only RoBERTa regression on SeppeV Jester (5x3 joke-disjoint CV)",
+  "code_file": "v1_laugho_jester_kernel.py",
+  "language": "python",
+  "kernel_type": "script",
+  "is_private": true,
+  "enable_gpu": true,
+  "enable_internet": true,
+  "keywords": [
+    "humor-strength",
+    "regression",
+    "spearman",
+    "jester",
+    "roberta",
+    "5x3-cv",
+    "haHaScore",
+    "speaker-disjoint-methodology"
+  ],
+  "dataset_sources": ["SeppeV/rated_jokes_dataset_from_jester"],
+  "kernel_sources": [],
+  "competition_sources": [],
+  "model_sources": ["roberta-base"]
+}

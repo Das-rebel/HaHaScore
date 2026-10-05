@@ -1,109 +1,114 @@
-# HaHaScore Improvement Plan (Realigned, Oct 5 2026)
+# Strategic Rethink — HaHaScore v1 (Oct 5 2026)
 
-**Council-realigned**: The canonical v1 path is **text-only RoBERTa regression on Jester**, not v2 LaughO (sister project).
-
-**Starting state**: HaHaScore v10 archived as multimodal humor model, falsification paper drafted, methodology codified. v2 LaughO is correctly identified as a sister project.
-
----
-
-## v1 canonical path: text-only RoBERTa on Jester
-
-### Architecture
-```
-roberta-base (frozen for v1.0; LoRA r=8 in v1.1)
-  → Linear(768, 1)  # single scalar regression head
-```
-
-### Dataset
-- **Source**: `SeppeV/rated_jokes_dataset_from_jester` (HF, 1,761,440 rows, Apache-2.0)
-- **Has**: jokeText + Z_rating inline
-- **Why**: continuous labels escape the StandUp4AI 1.16% positive class problem
-
-### Validation
-- 5×3 repeated joke-disjoint CV (3 seeds × 5 folds = 15 measurements)
-- Metrics: Spearman ρ (primary), MAE, RMSE
-- 10,000-resample bootstrap 95% CI
-- **Pre-registered gate**: ρ ≥ 0.35 AND CI excludes 0.30
-
-### Baseline (per `baseline_m1.py`)
-- TF-IDF(1-2g) + Ridge α=10: ρ = 0.277
-- Target: ρ > 0.35 (above TF-IDF, below multimodal target)
+**Date**: 2026-10-05
+**Status**: V1 plan validated; conflict between v5 "text-only random" and v1 "text-only Jester" resolved
+**Verdict**: v1 is honest and worth 4 hours. v2 blocked by data. v3 blocked by data.
 
 ---
 
-## What's actionable RIGHT NOW (CPU-only, no GPU)
+## The conflict that almost broke the v1 plan
 
-### ✅ Already done in this session
+I had two findings in tension:
 
-| File | Purpose |
+| Finding | Source | Implication |
+|---|---|---|
+| Text-only is random (AUC ~0.50) for humor DETECTION | `hahascore_v5_findings` (Sep 15) | Text is not informative for binary classification |
+| v1 = text-only RoBERTa regression on Jester | `rethink_v1` (Sep 8) | Continuous regression should work with text |
+
+**Resolution**: The v5 null applies to **detection** (binary classification of standup clips). Jester is a different task — 1.76M jokes with continuous 0-100 ratings where the discriminator is *which text* gets votes, not *which delivery*. M3 already confirmed ρ=0.313, 8 points above TF-IDF baseline 0.277.
+
+But the v5 ceiling IS real: **text-only will plateau**. Realistic ceiling: **ρ ≈ 0.35-0.40**, reachable with roberta-large or LoRA fine-tuning. The pre-registered gate (ρ ≥ 0.35 AND CI excludes 0.30) is correctly calibrated to detect fold-luck.
+
+---
+
+## The full path forward (with realistic ρ targets)
+
+| Phase | Target metric | Lower bound | Upper bound | Status |
+|---|---|---|---|---|
+| **v1** text-only Jester | Spearman ρ | 0.313 (M3) | 0.40 (LoRA+large) | **Shippable today** |
+| **v2** text + audio (AST) | ρ | 0.40 | 0.55 (v10 humor 0.69 mapped) | Blocked: no audio+Jester |
+| **v3** humor-conditioned generation | n/a | n/a | n/a | Blocked: zero (joke, audio, rating) triplets |
+
+**v2 / v3 are blocked by data, not by algorithm.** No escape until we have:
+- Audio + Jester alignment (no public dataset exists)
+- Labeled triplets for generation (no public dataset exists)
+
+**This means: v1 is the only honest v currently.**
+
+---
+
+## Cross-project synthesis (research + commercial + jobs)
+
+**Time budget** (8 hrs/week research window, job pipeline parallel):
+- Research: 4 hrs/wk (preserve only honest, falsified-by-5×3-CV work)
+- Commercial: 3 hrs/wk (mandate §10-12: 0/20 discovery conversations is binding)
+- Admin: 1 hr/wk
+
+**Pivot triggers:**
+| v1 result | Action |
 |---|---|
-| `laugho_cv.py` | Added `repeated_joke_disjoint_cv_regression()` for Spearman ρ/MAE/RMSE |
-| `train_jester_regression.py` | v1 entry point with dry-run mode (uses synthetic data) |
-| `experiments/v1_jester_regression/` | New v1 experiment directory + README |
-| `experiments/v2_laugho/SISTER_PROJECT.md` | One-line scope: `v2 LaughO is sister project, NOT canonical v1` |
-| `experiments/v2_laugho/` | All v2 files moved here (audio-only laughter detection) |
-| Deleted | All staged v6-v10 iteration cruft (bridge*, cascade*, modal*, per_language_norm) |
-| `README.md` | Replaced with v1 scope + sister project + paper pointer |
-| `laugho_ci.py` + `Makefile` | CI still passes |
-| `5x3_cv_results.json` | Falsification provenance (15 measurements) |
-| `lang_norm_results.json` | Falsified result retained |
+| ρ ≥ 0.35 | Write methodology paper, arXiv cs.CL |
+| ρ < 0.35 | Methodology-only paper still publishable (5×3 repeated CV on continuous regression is novel for humor) |
+| 95% CI spans 0.30 | Gate fails; DO NOT chase AUC; publish protocol contribution only |
 
-### What v2 LaughO keeps
-
-| Path | What |
-|---|---|
-| `experiments/v2_laugho/v2_laugho_train.py` | 1.5M MLP head over WavLM (sister project code) |
-| `experiments/v2_laugho/v2_laugho_train.ipynb` | Colab notebook (runnable) |
-| `experiments/v2_laugho/v2_laugho_kaggle_kernel.py` | Kaggle kernel |
-| `experiments/v2_laugho/kaggle_v2_laugho/` | Kaggle metadata |
-| `experiments/v2_laugho/laugho_data.py` | AudioSet extractor |
-| `experiments/v2_laugho/5x3_cv_audioset_eval00_*.json` | AUC 0.7501 ± 0.1817 |
-| `experiments/v2_laugho/RESULT_20261005.md` | Full first-run analysis |
-| `experiments/v2_laugho/SISTER_PROJECT.md` | Scope clarification |
+**Exit criterion**: "Research is done" = (a) v1 paper on arXiv with honest 5×3 numbers, OR (b) 3 commercial discovery conversations closed. Do NOT exit on AUC claims alone — every prior high-AUC number in this repo (0.860, 0.823, +0.163) has been falsified.
 
 ---
 
-## What requires GPU (Kaggle T4 / Colab)
+## 4-week concrete plan
 
-### Week 1: download Jester + train v1 (4-6 GPU h)
-```bash
-python3 -c "from datasets import load_dataset; ds = load_dataset('SeppeV/rated_jokes_dataset_from_jester')"
-python3 train_jester_regression.py --epochs 5 --n-seeds 3 --n-folds 5
+| Week | Action | Cost | Deliverable |
+|---|---|---|---|
+| **1** | Ship honest v1 + commercial seed | 12h | Result JSON + 5 LinkedIn DMs |
+| **2** | Decide v1 vs commercial | 8h | Gate check OR pivot to commercial |
+| **3** | v2 prep OR paper lock | 10h | arXiv skeleton OR 15 commercial calls |
+| **4** | arXiv OR commercial close | 8h | Submitted paper OR 3 pitch meetings |
+
+**Week 1 specific (start of v1 launch):**
+
+```
+Mon:  - Fix app.py real v10 load (replace SHA-1 fallback)
+      - Delete v8 stub (hf_release/v8_cascade_int8.onnx)
+      - Delete stale .pt (~155 MB freed)
+Tue:  - Upload v1_jester_train.ipynb to Colab T4 (4-6h run)
+      - 5 LinkedIn discovery DMs (parallel)
+Wed-Thu: v1 result.json committed
+        + 3 commercial follow-ups
+Fri:  - If ρ ≥ 0.35: draft v1 paper §2-4
+      - Else: methodology-only paper
 ```
 
-### Week 2: scale to full 1.76M + get honest baseline (12 GPU h)
+---
 
-### Week 3: if ρ ≥ 0.35, draft v1 paper (16 hrs human)
+## 7 failures to avoid (from memory)
 
-### Week 4: optional v2 multimodal extension using AST-clean labels
+1. ❌ **Do NOT cite AUC 0.860 or 0.823** — both are single-fold leakage artifacts (per `COUNCIL_FINAL_DECISION.md:1`). Already rewritten in README; demo badge still says 0.823 — needs update.
+2. ❌ **Do NOT trust single-fold AUC on imbalanced data.** +0.163 was −0.127 in 5×3 CV (p=0.0004). v1 pre-registers this exact trap.
+3. ❌ **Do NOT add per-language normalization.** Falsified Oct 2.
+4. ❌ **Do NOT chase v3 generation.** Zero (joke, audio, rating) triplets exist; 340 audio_final files overlap zero Jester IDs.
+5. ❌ **Do NOT ignore commercial-line gap.** Mandate §10-12 binding; 0/20 discovery conversations is a structural risk.
+6. ❌ **Do NOT confuse "humor detection AUC 0.69" with "humor strength ρ 0.69."** Different scales, different tasks.
+7. ❌ **Do NOT cite PR-AUC for v1** (continuous regression uses ρ; PR-AUC is for sparse binary).
 
 ---
 
-## Memory rules (the "avoid digression" part)
+## What v2 needs to become unblocked
 
-The following 5 things MUST be remembered and avoided:
-
-1. **The original goal is multimodal text+audio humor STRENGTH (0-100), not laughter detection.** v2 LaughO is sister project.
-2. **The 5×3 repeated CV methodology is the contribution.** Never inflate a single-fold number to a headline.
-3. **Jester continuous ratings** are the canonical v1 training data, not StandUp4AI 1.16% positive class.
-4. **The honest 5×3 CV for v10 is humor AUC 0.6924, gold 0.5453** — never cite 0.860 or 0.823 as headline.
-5. **ChuckleNet is read-only.** Cite papers, download HF weights, never modify.
-
-If at any point the work drifts to "build a better laughter detector," STOP and re-read this doc.
-
----
-
-## Cost summary
-
-| Item | Estimate |
+| Need | Effort |
 |---|---|
-| Cash | $0 |
-| GPU | ~4-6 hours T4 (per Jester training) + ~12 hours for full scale-up |
-| Human | ~16-24 hours total over 4 weeks |
-| Commits | ~3-5 to HaHaScore |
+| Audio + Jester alignment (no public dataset) | Would need YouTube clip matching + AST inference |
+| StandUp4AI + audio for ρ-style regression | Extract WavLM embeddings from 620v audio, train regression head on AST laugh-label column |
+
+**Realistic v2 path**: Use AST to label StandUp4AI 620v with continuous laughter-strength scores (not binary). Train `text+AST-projected_voice_v2` model. Validate with 5×3 joke-disjoint CV. **Estimate: 6-8 weeks** after v1 ships, requires GPU.
 
 ---
 
-## Single line status
+## Single line summary
 
-`make ci` returns PASS for the realigned state. The v1 entry point `train_jester_regression.py --dry-run` runs end-to-end with synthetic data. The real Jester run needs GPU.
+**v1 (RoBERTa-on-Jester) is honest and shippable. Realistic target ρ ≈ 0.30-0.40. v2/v3 blocked by data. Commercial line gap is the binding constraint per mandate §10-12. The 4-week plan above sequences research + commercial so neither starves the other.**
+
+The +0.163 lesson — *single-fold metrics on imbalanced data are systematically misleading* — is the rule that should govern every future AUC claim in this repo. v1's pre-registered gate is the operationalization of that lesson.
+
+---
+
+**Commit**: this rethink doc will be the new anchor in `IMPROVEMENT_PLAN.md`. The 4-week schedule supersedes the original 4-week plan from the council realignment, because it adds the commercial-line work that was missing.

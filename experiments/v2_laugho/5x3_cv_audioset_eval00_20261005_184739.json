@@ -1,0 +1,71 @@
+{
+  "timestamp": "2026-10-05T18:47:39Z",
+  "source_run_id": "5x3_cv_audioset_eval00_20261005_184739",
+  "source_path": "/content/drive/MyDrive/LaughterOnAudio/HaHaScore/v2_laugho_runs/",
+  "data_source": {
+    "dataset": "agkphysics/AudioSet",
+    "shard": "data/eval/00.parquet",
+    "license": "CC-BY-4.0",
+    "laugh_ontology_ids": [
+      "/m/01j3sz",
+      "/t/dd00001",
+      "/m/07r660_",
+      "/m/07s04w4",
+      "/m/07sq110",
+      "/m/07rgt08",
+      "/m/07q0yl5"
+    ],
+    "note": "Acoustic laughter labels (not VTT discourse positions)"
+  },
+  "model": {
+    "name": "v2 LaughO",
+    "backbone": "WavLM-base-plus (frozen, 768-dim)",
+    "head": "Linear(768) -> LN -> GELU -> Dropout(0.3) -> Linear(256) -> LN -> GELU -> Dropout(0.3) -> Linear(1)",
+    "trainable_params": "~1.5M",
+    "loss": "BCEWithLogitsLoss with pos_weight",
+    "optimizer": "AdamW lr=1e-3 weight_decay=0.01",
+    "scheduler": "CosineAnnealing",
+    "n_epochs": 10,
+    "batch_size": 256
+  },
+  "validation_protocol": {
+    "method": "5x3 repeated speaker-disjoint CV",
+    "n_seeds": 3,
+    "n_folds": 5,
+    "n_measurements": 15,
+    "split_strategy": "GroupKFold by video_id, video IDs shuffled per seed",
+    "metric": "ROC-AUC on per-segment binary classification"
+  },
+  "results": {
+    "auc_mean": 0.7501,
+    "auc_std": 0.1817,
+    "n_measurements": 15,
+    "verdict": "Strong signal on acoustic laughter labels, but high fold variance suggests n is small. NOT publishable as headline; needs scale-up."
+  },
+  "comparison_to_baselines": {
+    "HaHaScore_v10_5fold_speakerdisjoint_humor_AUC": 0.6924,
+    "HaHaScore_v10_5fold_speakerdisjoint_gold_AUC": 0.5453,
+    "HaHaScore_v10_comparable_task": "humor/laughter detection on StandUp4AI VTT discourse positions",
+    "ChuckleNet_Ten_heldout_F1": 0.33,
+    "ChuckleNet_Ten_comparable_task": "IoU-F1@0.2 on StandUp4AI 118 comedian-disjoint",
+    "StandUp4AI_paper_baseline_F1": 0.51,
+    "v2_LaughO_comparable_task": "ROC-AUC on AudioSet acoustic laughter labels",
+    "comparison_warning": "These are NOT directly comparable. Different tasks (acoustic vs discourse), different metrics (AUC vs IoU-F1), different label sources. The +0.05 v2 vs v10 gap is suggestive but unverified due to task difference."
+  },
+  "limitations": {
+    "single_shard": "Results from 1 of 35 AudioSet eval shards (~650 MB / 500 rows)",
+    "small_n": "Likely 500-2000 laugh + ~2500-10000 non-laugh samples from one shard",
+    "high_std": "std=0.18 vs v10 std=0.14; 1-shard estimates are noisier",
+    "label_source": "AudioSet acoustic (cleaner) vs StandUp4AI VTT (noisy/discourse)",
+    "not_publishable_as_headline": "Needs >=5 shards, n>=5000, repeat-rerun for stability"
+  },
+  "next_steps": [
+    "Scale to all 35 AudioSet eval shards (~22.5 GB total, 4 GPU h T4)",
+    "Add AMI Meeting Corpus (100h speaker-disjoint, 2 GPU h)",
+    "Add UR-FUNNY-Temporal 2026 (78.8h frame-level, 1 GPU h)",
+    "Re-run 5x3 CV on full dataset (~12 GPU h total)",
+    "Compare v2 LaughO to v10 ONNX on common 12-video StandUp4AI gold set",
+    "Submit to arXiv as 'AudioSet-only laughter detector with 5x3 repeated CV'"
+  ],
+  "git_commit": "7352527 (script) + d622618 (notebook)"
+}

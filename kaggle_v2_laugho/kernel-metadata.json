@@ -1,0 +1,15 @@
+{
+  "id": "subhajitdas/v2-laugho-train",
+  "title": "v2 LaughO: 5x3 repeated CV on agkphysics/AudioSet",
+  "code_file": "v2_laugho_kaggle_kernel.py",
+  "language": "python",
+  "kernel_type": "script",
+  "is_private": true,
+  "enable_gpu": true,
+  "enable_internet": true,
+  "keywords": ["laughter-detection", "wavlm", "speaker-disjoint-cv", "audioset", "haHaScore"],
+  "dataset_sources": ["agkphysics/audioset"],
+  "competition_sources": [],
+  "kernel_sources": [],
+  "model_sources": []
+}

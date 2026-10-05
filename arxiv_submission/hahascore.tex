@@ -93,6 +93,16 @@ across 7 languages. Total parameter count: $\sim$1.07M. ONNX INT8 quantized
 inference: $\sim$1.5\,ms on CPU. Full architecture and training scripts are
 released in the project repository~\cite{hahascore-repo}.
 
+The model is the latest in a sequence of six iterations: v5 (DeBERTa-v3-base
++ WavLM-base-plus bilinear fusion) reached a 5-fold cross-validation AUC of
+$0.632 \pm 0.007$ on the StandUp4AI pseudo-label set---the most defensible
+multimodal baseline that did not use speaker-disjoint splits. v10
+generalized the v5 fusion with a cascade-gate attention head and CORAL
+domain adaptation but did not improve on v5's generalization~\cite{v5ref}.
+The single-fold 0.860 / 0.823 numbers widely circulated in earlier
+documentation of the project are single-fold leakage artifacts and should
+not be cited.
+
 \subsection{Dataset}
 
 Training corpus: 639 stand-up comedy videos from the StandUp4AI
@@ -364,6 +374,12 @@ S. Das.
 \newblock HaHaScore: A Multimodal Humor Strength Predictor (Archived).
 \newblock GitHub \texttt{Das-rebel/HaHaScore}, commit
 \texttt{03884e0}, 2026.
+
+\bibitem{v5ref}
+S. Das.
+\newblock HaHaScore v5: Multimodal Humor Detection via DeBERTa-v3-base + WavLM-base-plus Bilinear Fusion.
+\newblock 5-fold CV AUC $0.632 \pm 0.007$ on StandUp4AI pseudo-label set.
+\newblock GitHub \texttt{Das-rebel/HaHaScore}, commit \texttt{ba48a05}, 2026.
 
 \end{thebibliography}
 

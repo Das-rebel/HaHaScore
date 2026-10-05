@@ -1,0 +1,8 @@
+{
+  "time": "2026-10-05T10:47:31.441661",
+  "model": "/Users/Subho/funny-strength-predictor/deployment/models/v10_cascade_int8.onnx",
+  "model_size_mb": 3.2570009231567383,
+  "paper_intact": true,
+  "readme_intact": true,
+  "verdict": "PASS"
+}

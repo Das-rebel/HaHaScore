@@ -251,7 +251,11 @@ def repeated_joke_disjoint_cv_regression(
             if len(preds) != len(va) or len(np.unique(ratings[va])) < 2:
                 rho, mae, rmse = 0.0, 1e6, 1e6
             else:
-                rho = float(spearmanr(preds, ratings[va]).statistic)
+                import warnings
+                with warnings.catch_warnings():
+                    warnings.simplefilter('ignore')
+                    rho_result = spearmanr(preds, ratings[va])
+                    rho = float(rho_result.statistic) if not np.isnan(rho_result.statistic) else 0.0
                 mae = float(mean_absolute_error(ratings[va], preds))
                 rmse = float(np.sqrt(mean_squared_error(ratings[va], preds)))
             all_rhos.append(rho)

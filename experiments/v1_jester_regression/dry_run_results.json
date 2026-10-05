@@ -1,8 +1,8 @@
 {
-  "rho_mean": NaN,
-  "rho_std": NaN,
-  "rho_ci_low": NaN,
-  "rho_ci_high": NaN,
+  "rho_mean": 0.0,
+  "rho_std": 0.0,
+  "rho_ci_low": 0.0,
+  "rho_ci_high": 0.0,
   "mae_mean": 26.019191831493835,
   "mae_std": 2.1155074090346204,
   "rmse_mean": 29.547077689618217,

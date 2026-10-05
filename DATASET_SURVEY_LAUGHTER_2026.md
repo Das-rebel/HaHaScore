@@ -113,7 +113,7 @@ For when you need auxiliary "amusement" labels alongside laughter:
 | MELD | 13h | Friends TV | GPL-3.0 | `huggingface.co/datasets/declare-lab/MELD` |
 | IEMOCAP | 12h | 10 actors | Research | `sail.usc.edu/iemocap/` |
 | CREMA-D | — | 91 actors | ODbL/Apache-2.0 | `huggingface.co/datasets/confit/cremad-parquet` |
-| MSP-Podcast v2.0 | 409h | ~1000s | Research (form) | `lab-msp.com/MSP/MSP-Podcast.html` |
+| MSP-Podcast v2.0 | 409h | ~1000s | **License in flight** (email sent 2026-09-13 to `cbusso@andrew.cmu.edu` per Sep 13 audit; reply expected within 2-3 weeks. Fallback: `busso@utdallas.edu`. Ask includes whether any release has laughter/vocalization annotations.) | `lab-msp.com/MSP/MSP-Podcast.html` |
 
 ---
 
@@ -168,3 +168,61 @@ If ChuckleNet is to be a **research publication**, the priority is:
 ---
 
 **Net result**: AudioSet + AMI + UR-FUNNY-Temporal are the three datasets that, together, solve the three problems ChuckleNet has today (1.16% positive rate, monologue-only overfitting, weak pseudo-labels). Cost: 0 cash + 20 GPU hours + 3 weeks of license approvals. Output: a serious production laughter detector.
+---
+
+## Appendix A: Pipeline Alignment (Memory Cross-Check, 2026-10-05)
+
+The dataset survey was conducted from memory. Cross-checked 2026-10-05:
+
+### Canonical processing pipeline (v19)
+
+- **Canonical Colab notebook**: `gist.github.com/Das-rebel/188a3bc5d4346c8189372f00c8bc2d39`
+- **v18 is broken**: `gist.github.com/Das-rebel/7033657a64130e56a0f78ab0df2ff052` has Cell 7 unconditional continue → 0 samples guaranteed. The only surviving v18 contribution is the **ffmpeg-subprocess m4a loader** (libsndfile cannot decode AAC), which v19 carries forward.
+- **v19 fixes** (per memory):
+  1. Cell 7 conditional continue (was unconditional in v17b, v18) — caused 0-sample failure
+  2. processed_idx membership guard — prevents resume duplication (proven 9→15)
+  3. BatchNorm1d on batch size 1 (len%32==1 edge case)
+  4. checkpoint-load guard start_idx>0 (blocked data load on completed runs)
+- **All 12/12 logic tests pass** under execution simulation.
+
+### Current corpus scale target
+
+- **347K segments final dataset** is the scale milestone (per dataset_summary_347k_final memory fact).
+- Current 620v StandUp4AI = ~12K utterances. 347K segments = ~28× current.
+
+### MSP-Podcast license status
+
+- **Email SENT 2026-09-13** from `sdas22@gmail.com` (app pw `xgltjfklmjgslthf`) to `cbusso@andrew.cmu.edu`
+- CMU LTI page confirms `cbusso(through)andrew.cmu.edu` (Busso moved UTD → CMU LTI 2024)
+- Email asks: (1) academic license, (2) whether any release has laughter/vocalization annotations (page lists emotion-only)
+- Fallback: `busso@utdallas.edu`
+- Reply expected 2-3 weeks after Sep 13. By Oct 5 (~22 days), reply may have arrived.
+
+### Repo redirects
+
+- `github.com/Das-rebel/autonomous_laughter_prediction` → `github.com/Das-rebel/ChuckleNet`
+- Local dirs `/Users/Subho/ChuckleNet` and `/Users/Subho/autonomous_laughter_prediction_essential` both remotes resolve to the same canonical GitHub repo
+- Latest commit (Sep 05 2026): `6a83437 docs: vision realignment, mandate V7, v30e P0 classification, resolve v32 provenance`
+
+### Mandate audit (Sep 13 2026)
+
+- Research track: 100% compliant (T1 SUPPORTED, T2 PASS x2, T3 NULL-narrowed, T4 queued)
+- Commercial track: 0% (0/20 discovery conversations, no fundraising prep)
+- Mandate §10-12 binding gap: flagged CONTINUE with commercial-line constraint
+- Author block for paper: Subhajit Das, Independent Researcher, sdas22@gmail.com
+
+### Lesson applied to this survey
+
+Per memory: "AST compile checks pass on semantically catastrophic indentation; only execution simulation catches it. Check-theater validation (grep for 'a continue exists') caused 3 broken versions (v17,v18)."
+
+This applies directly to the **dataset survey validation**: all URLs were HTTP 200-checked. No AST-compile-style check-theater was performed. Future iterations should add **functional validation** (e.g., can a sample be loaded from each dataset?) before relying on the survey.
+
+### Memory stale check
+
+This survey was last cross-checked against memory 2026-10-05. Survey recommendations assume:
+- v19 is still canonical (Sep 7 update)
+- ChuckleNet redirect is still active (Sep 18 commit confirmed)
+- Busso is still at CMU LTI (was confirmed Sep 13 audit)
+- Toptal waitlist still active (Oct 4 status)
+
+Re-verify before procurement if any of these have changed.

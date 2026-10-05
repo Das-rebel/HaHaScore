@@ -191,13 +191,7 @@ def paired_comparison(results_a, results_b):
 
 # Convenience function for sklearn-compatible models
 def sklearn_fold_fn(model_factory):
-    """
-    Wraps an sklearn-compatible estimator factory into a fold_fn.
-
-    Example:
-        fold_fn = sklearn_fold_fn(lambda: LogisticRegression(class_weight='balanced'))
-        results = repeated_speaker_disjoint_cv(X, y, groups, fold_fn=fold_fn)
-    """
+    '''Wraps an sklearn-compatible estimator factory into a fold_fn.'''
     def fold_fn(tr_X, tr_y, va_X, va_y, seed):
         model = model_factory()
         if hasattr(model, 'random_state'):
@@ -211,6 +205,95 @@ def sklearn_fold_fn(model_factory):
             return 0.5
         return float(roc_auc_score(va_y, scores))
     return fold_fn
+
+
+def repeated_joke_disjoint_cv_regression(
+    joke_texts, ratings, joke_ids,
+    fold_fn=None,
+    n_seeds=3, n_folds=5, seed_base=42,
+    return_per_fold=False,
+):
+    '''5x3 repeated joke-disjoint CV for continuous-rating regression.
+
+    Use for text-only RoBERTa regression on Jester (continuous 0-100 ratings).
+    - joke_texts: list[str], one per row
+    - ratings: array-like of shape (n_samples,)
+    - joke_ids: array-like, hash-or-id grouping variable (jokes never cross folds)
+    - fold_fn: callable(tr_texts, tr_y, va_texts, va_y, seed) -> (preds_va: array)
+
+    Returns dict with mean/std/CI of Spearman rho, MAE, RMSE across 15 measurements.
+    '''
+    from scipy.stats import spearmanr
+    from sklearn.metrics import mean_absolute_error, mean_squared_error
+
+    assert fold_fn is not None, 'fold_fn must be provided'
+    ratings = np.asarray(ratings)
+    joke_ids = np.asarray(joke_ids)
+    n_samples = len(ratings)
+    assert len(joke_texts) == n_samples
+
+    all_rhos, all_maes, all_rmses = [], [], []
+
+    for seed_idx in range(n_seeds):
+        seed = seed_base + seed_idx * 100
+        rng = np.random.RandomState(seed)
+        unique_jokes = np.unique(joke_ids)
+        shuffled_jokes = rng.permutation(unique_jokes)
+        joke_remap = {j: shuffled_jokes[i] for i, j in enumerate(unique_jokes)}
+        jokes_shuffled = np.array([joke_remap[j] for j in joke_ids])
+
+        from sklearn.model_selection import GroupKFold
+        gkf = GroupKFold(n_splits=n_folds)
+        for fold_idx, (tr, va) in enumerate(gkf.split(np.arange(n_samples), ratings, jokes_shuffled)):
+            preds = fold_fn([joke_texts[i] for i in tr], ratings[tr],
+                             [joke_texts[i] for i in va], ratings[va], seed)
+            preds = np.asarray(preds).flatten()
+            if len(preds) != len(va) or len(np.unique(ratings[va])) < 2:
+                rho, mae, rmse = 0.0, 1e6, 1e6
+            else:
+                rho = float(spearmanr(preds, ratings[va]).statistic)
+                mae = float(mean_absolute_error(ratings[va], preds))
+                rmse = float(np.sqrt(mean_squared_error(ratings[va], preds)))
+            all_rhos.append(rho)
+            all_maes.append(mae)
+            all_rmses.append(rmse)
+
+    all_rhos = np.array(all_rhos)
+    all_maes = np.array(all_maes)
+    all_rmses = np.array(all_rmses)
+
+    # Bootstrap CI on Spearman
+    boot_rng = np.random.RandomState(42)
+    boot_means = []
+    for _ in range(10000):
+        idx = boot_rng.choice(len(all_rhos), len(all_rhos), replace=True)
+        boot_means.append(np.mean(all_rhos[idx]))
+    ci_low, ci_high = np.percentile(boot_means, [2.5, 97.5])
+
+    if np.mean(all_rhos) > 0.40 and ci_low > 0.30:
+        verdict = 'STRONG: rho > 0.40 with CI excluding 0.30. Publishable.'
+    elif np.mean(all_rhos) > 0.30 and ci_low > 0.20:
+        verdict = 'MODEST: rho > 0.30 with CI excluding 0.20. Publishable with caveat.'
+    elif ci_low < 0 < ci_high:
+        verdict = 'WEAK: CI spans zero. Need more data or better features.'
+    else:
+        verdict = 'NEGATIVE: rho at or below zero. Likely fold-luck or label noise.'
+
+    result = {
+        'rho_mean': float(np.mean(all_rhos)),
+        'rho_std': float(np.std(all_rhos)),
+        'rho_ci_low': float(ci_low),
+        'rho_ci_high': float(ci_high),
+        'mae_mean': float(np.mean(all_maes)),
+        'mae_std': float(np.std(all_maes)),
+        'rmse_mean': float(np.mean(all_rmses)),
+        'rmse_std': float(np.std(all_rmses)),
+        'n_measurements': len(all_rhos),
+        'verdict': verdict,
+    }
+    if return_per_fold:
+        result['per_fold'] = all_rhos.tolist()
+    return result
 
 
 if __name__ == "__main__":

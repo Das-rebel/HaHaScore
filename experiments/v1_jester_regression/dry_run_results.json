@@ -1,0 +1,12 @@
+{
+  "rho_mean": NaN,
+  "rho_std": NaN,
+  "rho_ci_low": NaN,
+  "rho_ci_high": NaN,
+  "mae_mean": 26.019191831493835,
+  "mae_std": 2.1155074090346204,
+  "rmse_mean": 29.547077689618217,
+  "rmse_std": 1.9237122680972487,
+  "n_measurements": 15,
+  "verdict": "NEGATIVE: rho at or below zero. Likely fold-luck or label noise."
+}

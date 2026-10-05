@@ -1,175 +1,109 @@
-# HaHaScore — Improvement Plan (Oct 5 2026)
+# HaHaScore Improvement Plan (Realigned, Oct 5 2026)
 
-**Starting state**: HaHaScore v10 archived, falsification paper drafted, methodology codified.
+**Council-realigned**: The canonical v1 path is **text-only RoBERTa regression on Jester**, not v2 LaughO (sister project).
 
-**Goal of this document**: catalog what improvements are actionable right now vs. require external dependencies (Drive, GPU, gold annotations).
-
----
-
-## What's in the repo RIGHT NOW (actionable without external deps)
-
-### CI pipeline (just built)
-
-| File | Purpose |
-|---|---|
-| `laugho_ci.py` | Continuous integration: validates model + paper + README integrity |
-| `ci_results.json` | Last CI run output (verdict: PASS, 2026-10-05) |
-| `Makefile` | Reproducible workflow: `make ci / data / train / eval / paper / all` |
-
-**Verified locally**: `make ci` returns PASS for current state.
-
-### 5×3 CV harness (reusable)
-
-| File | Purpose |
-|---|---|
-| `laugho_cv.py` | `repeated_speaker_disjoint_cv()` with bootstrap CI + paired comparison |
-| `5x3_cv_results.json` | The actual 15 measurements from the falsification |
-| `lang_norm_results.json` | The original (now falsified) +0.163 finding, retained as provenance |
-
-**Verified locally**: `python3 laugho_cv.py` runs demo with synthetic data, returns expected outputs.
-
-### v10 model validation
-
-| File | Purpose |
-|---|---|
-| `run_v10_5x3.py` | Apply laugho_cv to v10 ONNX model |
-| `deployment/models/v10_cascade_int8.onnx` | The shipped ONNX (3.26 MB, verified intact) |
-
-**Verified locally**: `python3 run_v10_5x3.py` loads v10, prints inputs/outputs, lists gold videos.
-
-### v2 LaughO training skeleton
-
-| File | Purpose |
-|---|---|
-| `v2_laugho_train.py` | Trains 768→256→128→1 MLP head (~1.5M params) |
-| `laugho_train.py` | Earlier skeleton (superseded by v2_laugho_train.py) |
-
-**Status**: skeleton only; needs Drive features to actually run.
-
-### Data pipeline (reusable but untested)
-
-| File | Purpose |
-|---|---|
-| `laugho_data.py` | Streams AudioSet parquet, filters 8 laugh ontology IDs |
-| `data/audioset_laugh_ontology.json` | Saved 8 laugh ontology IDs |
-
-**Verified locally**: `laugho_data.py` compiles, AudioSet schema confirmed via range request.
-
-### Honest docs (verified)
-
-| File | Status |
-|---|---|
-| `README.md` | Replaced with DEPRECATED banner + honest 5-fold numbers |
-| `arxiv_submission/hahascore.tex` | SciSlop-verified, 2 unresolved refs fixed |
-| `arxiv_submission/hahascore_arxiv_bundle.tar.gz` | 182 KB submission bundle ready |
-| `RETHINK_2026_v2.md` | 5-fold CV honest number provenance |
-| `SPEAKER_DISJOINT_FINDINGS.md` | Identity + language confound diagnostic |
-| `COUNCIL_FINAL_DECISION.md` | 4-week plan + 24-hour fix list |
+**Starting state**: HaHaScore v10 archived as multimodal humor model, falsification paper drafted, methodology codified. v2 LaughO is correctly identified as a sister project.
 
 ---
 
-## What requires Drive features
+## v1 canonical path: text-only RoBERTa on Jester
 
-The actual CV validation requires `bridge4_features.npz` + `v6_features.npz` from Google Drive (the 12-video gold subset + the 639-video StandUp4AI features). Local disk is 8.4 GB free; Drive has 1.6 GB of training data per memory.
-
-**Action**: download Drive features → run `run_v10_5x3.py` → verify the published 0.69/0.55 numbers reproduce.
-
-**Cost**: 0 GPU; ~5 minutes CPU.
-
----
-
-## What requires GPU (Kaggle T4)
-
-### Step 1: Download + decode AudioSet laughter family
-
-- **Source**: `agkphysics/AudioSet` (CC-BY-4.0)
-- **Size**: 22.5 GB for all 35 eval shards
-- **Filter**: 8 laugh ontology IDs (Laughter, Giggle, Snicker, etc.)
-- **Output**: ~5k-10k laugh samples at frame level
-- **Cost**: 0 cash + 4 GPU h (T4)
-
-### Step 2: Train v2 LaughO MLP
-
-- **Architecture**: 768 → 256 → 128 → 1 (1.5M params, WavLM frozen)
-- **Data**: AudioSet laugh samples (positive) + StandUp4AI non-laugh (negative)
-- **Loss**: BCEWithLogitsLoss with pos_weight for 1.16% positive rate
-- **Optimizer**: AdamW, lr=1e-3
-- **Cost**: 0 cash + 2 GPU h (T4)
-
-### Step 3: 5×3 repeated CV evaluation
-
-- **Protocol**: 5 folds × 3 seeds × 15 measurements
-- **Output**: AUC mean, std, 95% bootstrap CI, paired comparison vs baseline
-- **Cost**: 0 cash + 1 GPU h (T4) or 0 cash + 30 min CPU
-
-### Total cost to v2+ get honest published number
-
-**3 GPU h on Kaggle T4 + 0 cash.** Equivalent to: 30% of one week of free T4 quota.
-
----
-
-## What requires gold annotation (out of scope)
-
-The 12-video gold set is too small to support any single-fold headline. The user has no annotation budget per the "no-paid-data-spends" directive. This is **out of scope** — but documented in `DATASET_SURVEY_LAUGHTER_2026.md` as the next-step priority if budget becomes available.
-
----
-
-## 4-week improvement roadmap (concrete)
-
-### Week 1 (already done in this session)
-- ✅ CI pipeline (`laugho_ci.py`, `Makefile`)
-- ✅ v10 ONNX verification (`run_v10_5x3.py`)
-- ✅ v2 LaughO training script (`v2_laugho_train.py`)
-- ✅ AudioSet data pipeline (`laugho_data.py`)
-- ✅ Honest docs (README, paper, falsification logs)
-
-### Week 2 (requires Drive download)
-- Download `bridge4_features.npz` + `v6_features.npz` to local
-- Run `run_v10_5x3.py` → confirm 0.69/0.55 numbers reproduce
-- Save results to `experiments/v2_laugho/v10_baseline_5x3.json`
-
-### Week 3 (requires Kaggle T4)
-- Run `laugho_data.py --decode` on 1 AudioSet eval shard (~650 MB)
-- Get ~1500-3000 laugh samples
-- Train v2 LaughO MLP (~2 GPU h)
-- 5×3 CV → get honest number, compare to v10
-
-### Week 4 (publishable)
-- Update PAPER_DRAFT_V3_CONSOLIDATED.md with v2 LaughO number
-- Update `DATASET_SURVEY_LAUGHTER_2026.md` with actual training result
-- Tag release `v2.0-laugho` on `Das-rebel/HaHaScore`
-- Post to arXiv (if falsification paper not yet posted)
-- Tweet thread: "We tried to make laughter detection 10x better, ended up 0.05x better but with confidence"
-
----
-
-## Key file: 1-line runnable
-
-```bash
-make all
+### Architecture
+```
+roberta-base (frozen for v1.0; LoRA r=8 in v1.1)
+  → Linear(768, 1)  # single scalar regression head
 ```
 
-This runs:
-1. `make ci` — validate paper + README + model
-2. `make eval` — run 5×3 CV harness demo
-3. `make paper` — rebuild arXiv submission bundle
+### Dataset
+- **Source**: `SeppeV/rated_jokes_dataset_from_jester` (HF, 1,761,440 rows, Apache-2.0)
+- **Has**: jokeText + Z_rating inline
+- **Why**: continuous labels escape the StandUp4AI 1.16% positive class problem
 
-If all three pass, the repo is in a publishable state.
+### Validation
+- 5×3 repeated joke-disjoint CV (3 seeds × 5 folds = 15 measurements)
+- Metrics: Spearman ρ (primary), MAE, RMSE
+- 10,000-resample bootstrap 95% CI
+- **Pre-registered gate**: ρ ≥ 0.35 AND CI excludes 0.30
+
+### Baseline (per `baseline_m1.py`)
+- TF-IDF(1-2g) + Ridge α=10: ρ = 0.277
+- Target: ρ > 0.35 (above TF-IDF, below multimodal target)
 
 ---
 
-## Honest scope
+## What's actionable RIGHT NOW (CPU-only, no GPU)
 
-This improvement plan is **bounded by**:
+### ✅ Already done in this session
 
-| Constraint | Status | Mitigation |
-|---|---|---|
-| Local disk 8.4 GB free | Blocks Drive download of full features | Use streaming / partial subsets |
-| No GPU locally | Blocks training | Kaggle T4 30 h/week free |
-| 12-video gold set | Limits ceiling | Use 5×3 CV methodology + bootstrap CI |
-| No annotation budget | Limits gold expansion | Use existing 5-fold honest number |
-| StandUp4AI labels are discourse positions (per memory) | Limits acoustic generalization | Use AudioSet acoustic labels instead |
+| File | Purpose |
+|---|---|
+| `laugho_cv.py` | Added `repeated_joke_disjoint_cv_regression()` for Spearman ρ/MAE/RMSE |
+| `train_jester_regression.py` | v1 entry point with dry-run mode (uses synthetic data) |
+| `experiments/v1_jester_regression/` | New v1 experiment directory + README |
+| `experiments/v2_laugho/SISTER_PROJECT.md` | One-line scope: `v2 LaughO is sister project, NOT canonical v1` |
+| `experiments/v2_laugho/` | All v2 files moved here (audio-only laughter detection) |
+| Deleted | All staged v6-v10 iteration cruft (bridge*, cascade*, modal*, per_language_norm) |
+| `README.md` | Replaced with v1 scope + sister project + paper pointer |
+| `laugho_ci.py` + `Makefile` | CI still passes |
+| `5x3_cv_results.json` | Falsification provenance (15 measurements) |
+| `lang_norm_results.json` | Falsified result retained |
 
-The HaHaScore v10 model is **archived**, not deleted. The falsification paper is **drafted, not submitted**. The methodology is **codified, not auto-run**. Each step is gated by the constraints above.
+### What v2 LaughO keeps
 
-The plan delivers **honest progress**, not inflated numbers.
+| Path | What |
+|---|---|
+| `experiments/v2_laugho/v2_laugho_train.py` | 1.5M MLP head over WavLM (sister project code) |
+| `experiments/v2_laugho/v2_laugho_train.ipynb` | Colab notebook (runnable) |
+| `experiments/v2_laugho/v2_laugho_kaggle_kernel.py` | Kaggle kernel |
+| `experiments/v2_laugho/kaggle_v2_laugho/` | Kaggle metadata |
+| `experiments/v2_laugho/laugho_data.py` | AudioSet extractor |
+| `experiments/v2_laugho/5x3_cv_audioset_eval00_*.json` | AUC 0.7501 ± 0.1817 |
+| `experiments/v2_laugho/RESULT_20261005.md` | Full first-run analysis |
+| `experiments/v2_laugho/SISTER_PROJECT.md` | Scope clarification |
+
+---
+
+## What requires GPU (Kaggle T4 / Colab)
+
+### Week 1: download Jester + train v1 (4-6 GPU h)
+```bash
+python3 -c "from datasets import load_dataset; ds = load_dataset('SeppeV/rated_jokes_dataset_from_jester')"
+python3 train_jester_regression.py --epochs 5 --n-seeds 3 --n-folds 5
+```
+
+### Week 2: scale to full 1.76M + get honest baseline (12 GPU h)
+
+### Week 3: if ρ ≥ 0.35, draft v1 paper (16 hrs human)
+
+### Week 4: optional v2 multimodal extension using AST-clean labels
+
+---
+
+## Memory rules (the "avoid digression" part)
+
+The following 5 things MUST be remembered and avoided:
+
+1. **The original goal is multimodal text+audio humor STRENGTH (0-100), not laughter detection.** v2 LaughO is sister project.
+2. **The 5×3 repeated CV methodology is the contribution.** Never inflate a single-fold number to a headline.
+3. **Jester continuous ratings** are the canonical v1 training data, not StandUp4AI 1.16% positive class.
+4. **The honest 5×3 CV for v10 is humor AUC 0.6924, gold 0.5453** — never cite 0.860 or 0.823 as headline.
+5. **ChuckleNet is read-only.** Cite papers, download HF weights, never modify.
+
+If at any point the work drifts to "build a better laughter detector," STOP and re-read this doc.
+
+---
+
+## Cost summary
+
+| Item | Estimate |
+|---|---|
+| Cash | $0 |
+| GPU | ~4-6 hours T4 (per Jester training) + ~12 hours for full scale-up |
+| Human | ~16-24 hours total over 4 weeks |
+| Commits | ~3-5 to HaHaScore |
+
+---
+
+## Single line status
+
+`make ci` returns PASS for the realigned state. The v1 entry point `train_jester_regression.py --dry-run` runs end-to-end with synthetic data. The real Jester run needs GPU.

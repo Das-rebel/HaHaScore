@@ -21,14 +21,14 @@ app = modal.App("haHaScore-v1-jester-regression")
 image = (
     modal.Image.debian_slim(python_version="3.11")
     .pip_install(
-        "torch==2.4.0",
-        "transformers==4.44.0",
-        "datasets==4.8.4",
-        "scipy==1.13.0",
-        "scikit-learn==1.5.0",
-        "numpy==1.26.4",
-        "pyarrow==16.0.0",
-        "requests==2.32.0",
+        "torch",
+        "transformers",
+        "datasets",
+        "scipy",
+        "scikit-learn",
+        "numpy",
+        "pyarrow>=21.0.0",
+        "requests",
     )
 )
 

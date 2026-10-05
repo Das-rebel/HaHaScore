@@ -17,7 +17,7 @@ The current ChuckleNet pipeline uses **620 videos** with 1.16% positive rate, ac
 | AMI Meeting Corpus | 100 h | ~3-5% | **Built-in** (by meeting ID) | ✅ Cross-domain |
 | UR-FUNNY-Temporal (2026) | 78.8 h | 1.5% | Yes | ✅ Benchmark |
 | MuSe-Humor (Passau-SFCH) | ~10 h | ~3% | Yes (DE/EN) | ✅ Cross-cultural eval |
-| MSP-Podcast v2.0 | 409 h | varies | Provided | ✅ "Amusement" proxy |
+| ~~MSP-Podcast v2.0~~ | ~~409 h~~ | — | ~~Skipped~~ | ❌ Do not pursue |
 
 **The conclusion**: AudioSet + AMI + UR-FUNNY-Temporal + Passau-SFCH together solve all three axes ChuckleNet is missing: **scale (5.8k h)**, **cross-domain generalization (meetings)**, and **frame-level evaluation benchmark**.
 
@@ -113,7 +113,7 @@ For when you need auxiliary "amusement" labels alongside laughter:
 | MELD | 13h | Friends TV | GPL-3.0 | `huggingface.co/datasets/declare-lab/MELD` |
 | IEMOCAP | 12h | 10 actors | Research | `sail.usc.edu/iemocap/` |
 | CREMA-D | — | 91 actors | ODbL/Apache-2.0 | `huggingface.co/datasets/confit/cremad-parquet` |
-| MSP-Podcast v2.0 | 409h | ~1000s | **Busso REPLIED Sep 15 2026** (per memory). Asked to complete form at `lab-msp.com/MSP/MSP-Podcast.html` + cite paper `Busso_202x.pdf`. Did NOT answer the laughter/vocalization question — follow up after form. ACTION: complete the form (may involve license fee — confirm before submitting per no-paid-data-spends directive). Fallback: `busso@utdallas.edu`. | `lab-msp.com/MSP/MSP-Podcast.html` |
+| ~~MSP-Podcast v2.0~~ | ~~409h~~ | — | **SKIPPED 2026-10-05** per user directive. Busso path is closed. Form was filled (Sep 19 2026, unsigned) but user decided not to sign/submit. Do not reference this dataset in v2 LaughO training plan. | — |
 
 ---
 
@@ -193,7 +193,8 @@ The dataset survey was conducted from memory. Cross-checked 2026-10-05:
 ### MSP-Podcast license status
 
 - **Email SENT 2026-09-13** from `sdas22@gmail.com` (app pw `xgltjfklmjgslthf`) to `cbusso@andrew.cmu.edu`
-- **Busso REPLIED Sep 15 2026** (per memory): complete form at `lab-msp.com/MSP/MSP-Podcast.html` + cite paper `Busso_202x.pdf`. He did NOT answer the laughter/vocalization question — follow up after form.
+- **Busso REPLIED Sep 15 2026** (per memory). Form filled Sep 19 2026 but UNSIGNED.
+- **SKIPPED 2026-10-05 per user directive**. Form unsigned, not submitted, not pursued. v2 LaughO does NOT depend on MSP-Podcast.
 - CMU LTI page confirms `cbusso(through)andrew.cmu.edu` (Busso moved UTD → CMU LTI 2024)
 - **ACTION PENDING**: complete form. May involve license fee — user directive is no paid training-data spends for now, so confirm fee before submitting.
 - Fallback: `busso@utdallas.edu`

@@ -71,3 +71,29 @@ make ci    # validates model + paper + README integrity
 3. **Jester continuous ratings** are the canonical v1 training data, not StandUp4AI 1.16% positive class.
 4. **Honest 5×3 CV for v10**: humor AUC 0.6924, gold 0.5453 — never cite 0.860 or 0.823.
 5. **ChuckleNet is read-only**. Cite papers, download HF weights, never modify.
+
+## Historical baseline: most defensible multimodal result
+
+HaHaScore v5 (DeBERTa-v3-base + WavLM-base-plus bilinear fusion, Sep 15 2026):
+- **5-fold CV AUC: 0.632 ± 0.007** on StandUp4AI pseudo-label set
+- **Val AUC: 0.613** on 10 held-out videos
+- Text-only baselines (random): RoBERTa 0.499, DeBERTa 0.501
+- Audio-only (WavLM LR): 0.538
+- Bilinear fusion: 0.613
+
+**v5 is the most defensible multimodal number we have published.** It was:
+- Verified with 5-fold CV (not single-fold)
+- Built on a clean DeBERTa-v3-base + WavLM-base-plus architecture
+- Below the inflated single-fold numbers (0.860/0.823) that v10's falsification revealed as leakage
+
+Per the strategic rethink (commit `46c6713`), v10 (the current repo's headline) does not improve on v5's generalization. The honest baseline for the multimodal track is **0.632 ± 0.007** (v5) or **0.6924 ± 0.0359** (v10 speaker-disjoint 5-fold), not 0.860.
+
+**Do NOT cite:**
+- ❌ AUC 0.860 (v7, single-fold fold-luck)
+- ❌ AUC 0.823 (v10, single-fold fold-luck)
+- ❌ +0.163 per-language norm gain (falsified by 5×3 CV, p=0.0004)
+
+**Cite instead:**
+- ✅ v5 multimodal: 0.632 ± 0.007 (5-fold CV on StandUp4AI pseudo-labels)
+- ✅ v10 multimodal: 0.6924 ± 0.0359 humor / 0.5453 ± 0.1313 gold (5×3 repeated speaker-disjoint CV)
+- ✅ Methodology: `arxiv_submission/hahascore.tex`

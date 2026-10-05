@@ -113,7 +113,7 @@ For when you need auxiliary "amusement" labels alongside laughter:
 | MELD | 13h | Friends TV | GPL-3.0 | `huggingface.co/datasets/declare-lab/MELD` |
 | IEMOCAP | 12h | 10 actors | Research | `sail.usc.edu/iemocap/` |
 | CREMA-D | — | 91 actors | ODbL/Apache-2.0 | `huggingface.co/datasets/confit/cremad-parquet` |
-| MSP-Podcast v2.0 | 409h | ~1000s | **License in flight** (email sent 2026-09-13 to `cbusso@andrew.cmu.edu` per Sep 13 audit; reply expected within 2-3 weeks. Fallback: `busso@utdallas.edu`. Ask includes whether any release has laughter/vocalization annotations.) | `lab-msp.com/MSP/MSP-Podcast.html` |
+| MSP-Podcast v2.0 | 409h | ~1000s | **Busso REPLIED Sep 15 2026** (per memory). Asked to complete form at `lab-msp.com/MSP/MSP-Podcast.html` + cite paper `Busso_202x.pdf`. Did NOT answer the laughter/vocalization question — follow up after form. ACTION: complete the form (may involve license fee — confirm before submitting per no-paid-data-spends directive). Fallback: `busso@utdallas.edu`. | `lab-msp.com/MSP/MSP-Podcast.html` |
 
 ---
 
@@ -193,10 +193,11 @@ The dataset survey was conducted from memory. Cross-checked 2026-10-05:
 ### MSP-Podcast license status
 
 - **Email SENT 2026-09-13** from `sdas22@gmail.com` (app pw `xgltjfklmjgslthf`) to `cbusso@andrew.cmu.edu`
+- **Busso REPLIED Sep 15 2026** (per memory): complete form at `lab-msp.com/MSP/MSP-Podcast.html` + cite paper `Busso_202x.pdf`. He did NOT answer the laughter/vocalization question — follow up after form.
 - CMU LTI page confirms `cbusso(through)andrew.cmu.edu` (Busso moved UTD → CMU LTI 2024)
-- Email asks: (1) academic license, (2) whether any release has laughter/vocalization annotations (page lists emotion-only)
+- **ACTION PENDING**: complete form. May involve license fee — user directive is no paid training-data spends for now, so confirm fee before submitting.
 - Fallback: `busso@utdallas.edu`
-- Reply expected 2-3 weeks after Sep 13. By Oct 5 (~22 days), reply may have arrived.
+- Note: Gmail IMAP via app password CANNOT read Sent Mail; sent-folder verification impossible programmatically. Meghamukherjeedas (2nd account) has no mail credentials stored.
 
 ### Repo redirects
 
@@ -226,3 +227,51 @@ This survey was last cross-checked against memory 2026-10-05. Survey recommendat
 - Toptal waitlist still active (Oct 4 status)
 
 Re-verify before procurement if any of these have changed.
+
+---
+
+## Appendix B: Canonical ChuckleNet Paper (Cross-Repo Context)
+
+Per `definitive_plan_20260806` memory (Sep 13 audit):
+
+- **Canonical paper for ChuckleNet** (separate repo, NOT this one): *"When Simple Beats Deep: F0 Prosody Outperforms WavLM for Laughter Detection"*
+- **Core verified result**: F0 (5-dim) F1=0.9553 vs WavLM (768-dim) F1=0.2210 on 87v caption-marker labels
+- Adding WavLM HURTS (F1 drops to 0.9499). F0 is the gold standard.
+- Agent council verdict: F0 finding is golden nugget; 87v is critical vulnerability (need 500+).
+- Steps: arXiv preprint NOW, scale to 500v on Colab, add wav2vec2+HuBERT baselines, bootstrap CIs, submit INTERSPEECH 2026.
+- STOP: word-level cascade, individual laughter, startup planning, more paper drafts.
+
+**This is a different paper than the HaHaScore falsification paper** (`arxiv_submission/hahascore.tex`). Both are valid contributions:
+- HaHaScore paper: methodology / self-falsification case study
+- ChuckleNet paper: empirical finding (F0 > WavLM) for INTERSPEECH 2026
+
+---
+
+## Appendix C: Labels Are Discourse, Not Acoustic (123d old, verify)
+
+Per `labels_are_discourse_not_acoustic` memory: **VTT [laughter] labels are AUDIENCE REACTION POSITIONS, not acoustic laughter events.**
+
+- Top labeled tokens in StandUp4AI VTT: `the, a, i, to, and, ., !` — zero laughter-lexical tokens
+- Labels land on function words and punctuation **AFTER punchlines**
+- This reframes the task from "find when someone laughs" to "predict where in transcript audience laughter will follow a punchline"
+- Implication: **text models should dominate** (capturing setup/punchline structure) while **prosody handles timing/intonation**
+
+**Implication for HaHaScore architecture**: the WavLM audio + DistilBERT text fusion was actually well-designed for this reframed task — but the data leak (VTT markers = audience positions, not acoustic events) means the +0.163 per-language normalization finding and the AUC 0.860/0.823 numbers may be measuring **audience anticipation** rather than actual laughter.
+
+**For v2 LaughO**: the AudioSet laughter family (Laughter/Giggle/Snicker) is **acoustic event** labels, not audience-reaction labels. Switching from VTT-derived labels to AudioSet acoustic labels would give a cleaner task definition.
+
+⚠️ This is a 123-day-old memory finding. Verify before acting on.
+
+---
+
+## Appendix D: DO-NOT-APPROACH List
+
+Per memory: **`Anirban Datta` is on the user-mandated DO-NOT-APPROACH list.**
+
+- Enforced in `pipeline_v2/canonical_profile.json → do_not_approach[]`
+- `preflight_v2.py:check_job` returns DO_NOT-APPROACH fail if name appears in company/title
+- `lint_text` hard-flags the name in any outreach text/notes/cover letters
+- Never contact, never apply via his posts, never include in referral/outreach drafts
+- Add future names to the canonical list, not scripts
+
+This applies to outreach / job pipeline work — not to dataset acquisition. No conflict with the laughter research.

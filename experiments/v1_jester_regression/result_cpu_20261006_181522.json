@@ -1,0 +1,29 @@
+{
+  "rho_mean": 0.2314979138387446,
+  "rho_std": 0.017541245566197194,
+  "rho_ci_low": 0.22217283697447993,
+  "rho_ci_high": 0.24024231329878293,
+  "mae_mean": 57.23707258118009,
+  "mae_std": 2.770108924794879,
+  "rmse_mean": 64.38366987568078,
+  "rmse_std": 2.2772443752694245,
+  "n_measurements": 15,
+  "verdict": "NEGATIVE.",
+  "config": {
+    "epochs": 50,
+    "lr": 0.001,
+    "batch_size": 256,
+    "n_seeds": 3,
+    "n_folds": 5,
+    "sample_limit": 50000,
+    "dataset": "SeppeV/rated_jokes_dataset_from_jester",
+    "n_samples_used": 50000,
+    "pre_registered_gates": {
+      "rho_min": 0.35,
+      "ci_lower_min": 0.3
+    },
+    "mode": "cpu-only (pre-cached RoBERTa embeddings)",
+    "total_runtime_seconds": 1334.408226966858
+  },
+  "timestamp": "20261006_190627"
+}

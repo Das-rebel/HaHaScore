@@ -1,0 +1,52 @@
+{
+  "model": "roberta_regression_v1_m3_recipe",
+  "date": "20261007_043951",
+  "device": "cuda",
+  "config": {
+    "epochs": 4,
+    "lr": 2e-05,
+    "batch_size": 32,
+    "max_len": 128,
+    "sample_limit": 50000,
+    "dataset": "SeppeV/rated_jokes_dataset_from_jester",
+    "mode": "M3 recipe (fine-tuned RoBERTa)"
+  },
+  "per_epoch": [
+    {
+      "epoch": 1,
+      "rho": 0.34016733265943166,
+      "mae": 20.527288374524627,
+      "rmse": 25.232242180559407
+    },
+    {
+      "epoch": 2,
+      "rho": 0.3353296989502212,
+      "mae": 20.547677593711782,
+      "rmse": 25.157468689774117
+    },
+    {
+      "epoch": 3,
+      "rho": 0.3363904711803176,
+      "mae": 21.053521977124852,
+      "rmse": 25.404408895049016
+    },
+    {
+      "epoch": 4,
+      "rho": 0.336921154696576,
+      "mae": 20.866597705732346,
+      "rmse": 25.289896841759532
+    }
+  ],
+  "best": {
+    "epoch": 1,
+    "rho": 0.34016733265943166,
+    "mae": 20.527288374524627,
+    "rmse": 25.232242180559407
+  },
+  "m3_baseline": {
+    "rho": 0.3127,
+    "rho_jester": 0.3571,
+    "mae": 22.98,
+    "epoch": 3.0
+  }
+}

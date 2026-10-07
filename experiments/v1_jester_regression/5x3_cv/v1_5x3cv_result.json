@@ -1,0 +1,33 @@
+{
+  "rho_mean": 0.22917781138760493,
+  "rho_std": 0.028852085967276207,
+  "rho_ci_low": 0.21430784870615655,
+  "rho_ci_high": 0.24396513863251298,
+  "mae_mean": 21.092685316560996,
+  "mae_std": 0.2667110689311165,
+  "rmse_mean": 25.754405173864583,
+  "n_measurements": 15,
+  "verdict": "GATE NOT MET: 5x3 CV does not pass pre-registered gate.",
+  "config": {
+    "epochs_per_fold": 1,
+    "lr": 2e-05,
+    "batch_size": 32,
+    "n_seeds": 3,
+    "n_folds": 5,
+    "sample_limit": 50000,
+    "dataset": "SeppeV/rated_jokes_dataset_from_jester",
+    "mode": "M3 recipe + 5x3 joke-disjoint CV",
+    "pre_registered_gates": {
+      "rho_min": 0.35,
+      "ci_lower_min": 0.3
+    }
+  },
+  "timestamp": "20261007_191536",
+  "total_runtime_seconds": 16126.737129688263,
+  "v1_single_run_baseline": {
+    "rho": 0.3402,
+    "mae": 20.53,
+    "epochs": 4,
+    "note": "single 90/10 split"
+  }
+}

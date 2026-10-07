@@ -1,17 +1,17 @@
 {
-  "id": "subhajitdas/v1-jester-roberta-regression",
-  "title": "v1 Jester RoBERTa regression 5x3 CV",
-  "code_file": "v1_laugho_jester_kernel.py",
+  "id": "subhajitdas/v1-jester-m3-recipe",
+  "title": "v1 Jester M3 Recipe Reproduction",
+  "code_file": "v1_jester_m3_recipe.py",
   "language": "python",
   "kernel_type": "script",
   "is_private": true,
   "enable_gpu": true,
   "enable_internet": true,
   "keywords": [
-    "humor-strength",
     "jester",
     "roberta",
-    "5x3-cv"
+    "m3-recipe",
+    "regression"
   ],
   "dataset_sources": [],
   "competition_sources": [],

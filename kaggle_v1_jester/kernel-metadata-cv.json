@@ -1,0 +1,20 @@
+{
+  "id": "subhajitdas/v1-jester-m3-5x3cv-reproduction",
+  "title": "v1 Jester RoBERTa 5x3 CV (M3 Recipe Reproduced)",
+  "code_file": "v1_jester_m3_cv_5x3.py",
+  "language": "python",
+  "kernel_type": "script",
+  "is_private": true,
+  "enable_gpu": true,
+  "enable_internet": true,
+  "keywords": [
+    "jester",
+    "roberta",
+    "5x3cv",
+    "m3-recipe",
+    "regression"
+  ],
+  "dataset_sources": [],
+  "competition_sources": [],
+  "kernel_sources": []
+}

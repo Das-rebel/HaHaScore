@@ -33,11 +33,20 @@ eval:
 paper:
 	cd arxiv_submission && tar -czf hahascore_arxiv_bundle.tar.gz \
 	    hahascore.tex \
+	    references.bib \
 	    figure_5x3_falsification.pdf \
 	    figure_speaker_disjoint.pdf \
 	    README.md \
 	    COVER_LETTER.md
 	@echo "Bundle: arxiv_submission/hahascore_arxiv_bundle.tar.gz"
+	cd arxiv_submission && tar -czf v1_paper_arxiv_bundle.tar.gz \
+	    v1_paper.tex \
+	    figure_v1_5x3.png \
+	    figure_v1_5x3.pdf \
+	    references.bib \
+	    v1_README.md
+	@echo "Bundle: arxiv_submission/v1_paper_arxiv_bundle.tar.gz""
+	@echo "Bundle: arxiv_submission/v1_paper_arxiv_bundle.tar.gz"
 
 all: ci eval paper
 	@echo "Full validation complete. Bundle ready for upload."

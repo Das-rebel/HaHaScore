@@ -35,16 +35,97 @@ from scipy.stats import spearmanr
 from sklearn.metrics import mean_absolute_error, mean_squared_error
 from sklearn.model_selection import GroupKFold
 
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)) or '.')
-from jester_source import JesterSource, load_csv
-from roberta_regressor import RobertaRegressor
+# Inline JesterSource (from jester_source.py)
+DATASET_ID = 'SeppeV/rated_jokes_dataset_from_jester'
+HF_API = 'https://huggingface.co'
+
+import pyarrow.parquet as pq
+import requests as req
+from pathlib import Path as _Path
+
+def _list_shards():
+    r = req.get(f'{HF_API}/api/datasets/{DATASET_ID}/tree/main/data', timeout=30)
+    r.raise_for_status()
+    return sorted([it['path'] for it in r.json() if it.get('type') == 'file' and it['path'].endswith('.parquet')])
+
+def _download_shard(remote_path, output_dir):
+    url = f'{HF_API}/datasets/{DATASET_ID}/resolve/main/{remote_path}'
+    local = Path(output_dir) / Path(remote_path).name
+    if not local.exists():
+        r = req.get(url, stream=True, timeout=300)
+        r.raise_for_status()
+        with open(local, 'wb') as f:
+            for chunk in r.iter_content(chunk_size=1024*1024):
+                f.write(chunk)
+    return local
+
+def write_jester_csv(output_dir):
+    out_dir = Path(output_dir)
+    out_dir.mkdir(parents=True, exist_ok=True)
+    shards = _list_shards()
+    out_csv = out_dir / 'jester_full.csv'
+    with open(out_csv, 'w', newline='') as f:
+        writer = csv.DictWriter(f, fieldnames=['joke_id', 'joke_text', 'rating'])
+        writer.writeheader()
+        total_in, total_out = 0, 0
+        for shard_path in shards:
+            local = _download_shard(shard_path, out_dir)
+            table = pq.read_table(local)
+            for row in table.to_pylist():
+                total_in += 1
+                joke_text = row.get('jokeText', '')
+                rating = row.get('rating', None)
+                if not joke_text or rating is None:
+                    continue
+                try:
+                    rating = float(rating)
+                except (TypeError, ValueError):
+                    continue
+                if rating != rating:
+                    continue
+                writer.writerow({
+                    'joke_id': abs(hash(joke_text)) % (10**12),
+                    'joke_text': str(joke_text).replace('\n', ' ').strip()[:1500],
+                    'rating': rating,
+                })
+                total_out += 1
+            try:
+                os.remove(local)
+            except OSError:
+                pass
+    return out_csv, total_in, total_out
+
+# Inline RobertaRegressor (from roberta_regressor.py)
+class RobertaRegressor(nn.Module):
+    def __init__(self, model_name='roberta-base', freeze_backbone=False, use_fp16=False,
+                 use_grad_checkpointing=False, device='cuda'):
+        super().__init__()
+        from transformers import RobertaModel
+        self.backbone = RobertaModel.from_pretrained(model_name)
+        if freeze_backbone:
+            for p in self.backbone.parameters():
+                p.requires_grad = False
+        self.head = nn.Linear(self.backbone.config.hidden_size, 1)
+        self.use_fp16 = use_fp16
+        if device == 'cuda' and use_grad_checkpointing:
+            self.backbone.gradient_checkpointing_enable()
+
+    def forward(self, input_ids, attention_mask):
+        # v19 lesson: never let a 1-batch edge case crash here
+        if input_ids.shape[0] == 0:
+            return torch.zeros(0, device=input_ids.device)
+        out = self.backbone(input_ids=input_ids, attention_mask=attention_mask)
+        mask = attention_mask.unsqueeze(-1).float()
+        denom = mask.sum(dim=1).clamp(min=1)
+        pooled = (out.last_hidden_state * mask).sum(dim=1) / denom
+        return self.head(pooled).squeeze(-1)
 
 MODES = ['m3_recipe', '5x3cv', 'finetuned', 'v2_laugho']
 
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument('--mode', required=True, choices=MODES)
+    ap.add_argument('--mode', default='5x3cv', choices=MODES, help='v1 mode (default 5x3cv: the canonical 5x3 joke-disjoint CV)')
     ap.add_argument('--epochs', type=int, default=None, help='override per-mode default')
     ap.add_argument('--lr', type=float, default=2e-5)
     ap.add_argument('--batch-size', type=int, default=32)
@@ -53,28 +134,38 @@ def main():
     ap.add_argument('--n-folds', type=int, default=5)
     ap.add_argument('--out-dir', default='/kaggle/working')
     args = ap.parse_args()
-
     print(f'=== HaHaScore Kaggle kernel (mode={args.mode}) ===')
     print(f'  Python: {sys.version.split()[0]}')
 
     # ===== Step 1: Install deps =====
     print('\n=== Step 1: Install deps ===')
+    subprocess.run(['pip', 'install', '--quiet', 'pyarrow==18.1.0'], check=True)
     subprocess.run(['pip', 'install', '--quiet', '--upgrade',
-                    'transformers', 'scipy', 'scikit-learn', 'pyarrow', 'requests'],
+                    'transformers', 'scipy', 'scikit-learn', 'requests'],
                    check=True)
     print('  Installed')
 
+    from scipy.stats import spearmanr
+    from sklearn.metrics import mean_absolute_error, mean_squared_error
+    from sklearn.model_selection import GroupKFold
+    import pyarrow.parquet as pq
     from transformers import RobertaTokenizer
+    from sklearn.metrics import mean_absolute_error, mean_squared_error
+    from sklearn.model_selection import GroupKFold
 
-    device = 'cuda' if torch.cuda.is_available() else 'cpu'
+    device = 'cuda'
+    if device == 'cuda':
+        free, total = torch.cuda.mem_get_info()
+        if free < 4 * 1024**3:  # need ~4GB for roberta-base + head
+            print(f'  WARNING: only {free/1e9:.1f} GB free GPU, falling back to CPU')
+            device = 'cpu' if torch.cuda.is_available() else 'cpu'
     print(f'  Device: {device}')
 
     # ===== Step 2: Download Jester =====
     print('\n=== Step 2: Download Jester (via JesterSource) ===')
     out_dir = Path('/kaggle/working/jester')
     out_dir.mkdir(parents=True, exist_ok=True)
-    src = JesterSource(out_dir)
-    csv_path, n_in, n_out = src.write_csv()
+    csv_path, n_in, n_out = write_jester_csv(out_dir)
     print(f'  Wrote {csv_path}: {n_in} in, {n_out} kept')
 
     # ===== Step 3: Load + subsample =====
@@ -236,6 +327,10 @@ def main():
                     elapsed = time.time() - t0
                     total = time.time() - t_start
                     print(f'  seed={seed} fold={fold_idx}: rho={rho:.4f} MAE={mae:.2f} RMSE={rmse:.2f} ({elapsed:.0f}s, total {total:.0f}s)')
+                    # v19 lesson: membership guard prevents resume-duplication
+                    if any(r.get('seed') == seed and r.get('fold') == fold_idx for r in partial['fold_results']):
+                        print(f'    (already recorded, skip duplicate)')
+                        continue
                     partial['fold_results'].append({
                         'seed': seed, 'fold': fold_idx, 'rho': rho, 'mae': mae, 'rmse': rmse,
                         'elapsed_s': elapsed, 'total_s': total,

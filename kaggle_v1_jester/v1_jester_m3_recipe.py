@@ -49,73 +49,25 @@ import torch.nn as nn
 import torch.nn.functional as F
 from scipy.stats import spearmanr
 from sklearn.metrics import mean_absolute_error, mean_squared_error
-import pyarrow.parquet as pq
-import requests as req
+import sys
+sys.path.insert(0, '/kaggle/working/kaggle_v1_jester' if os.path.exists('/kaggle/working/kaggle_v1_jester') else '.')
+from jester_source import JesterSource, load_csv
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 print(f'  Device: {device} (will use CPU like M3 if GPU unavailable)')
 
 # ===== Step 2: Download Jester =====
-print('\n=== Step 2: Download SeppeV Jester ===')
-HF_API = 'https://huggingface.co'
-DATASET_ID = 'SeppeV/rated_jokes_dataset_from_jester'
+print('\n=== Step 3: Load Jester ===')
 
-def list_shards():
-    r = req.get(f'{HF_API}/api/datasets/{DATASET_ID}/tree/main/data', timeout=30)
-    r.raise_for_status()
-    return sorted([it['path'] for it in r.json() if it.get('type') == 'file' and it['path'].endswith('.parquet')])
-
-def download_shard(remote_path, dst_dir):
-    url = f'{HF_API}/datasets/{DATASET_ID}/resolve/main/{remote_path}'
-    local = dst_dir / Path(remote_path).name
-    if not local.exists():
-        r = req.get(url, stream=True, timeout=300)
-        r.raise_for_status()
-        with open(local, 'wb') as f:
-            for chunk in r.iter_content(chunk_size=1024*1024):
-                f.write(chunk)
-    return local
-
+# Use JesterSource adapter (single source-of-truth, replaces 4x copy)
 out_dir = Path('/kaggle/working/jester')
 out_dir.mkdir(parents=True, exist_ok=True)
-parquet_files = list_shards()
-print(f'  Found {len(parquet_files)} shards')
+jester_src = JesterSource(out_dir)
+csv_path, n_in, n_out = jester_src.write_csv()
+out_csv = Path('/kaggle/working/jester/jester_full.csv')
+assert out_csv == csv_path, f'{csv_path} != {out_csv}'
+print(f'  Wrote {csv_path}: {n_in} in, {n_out} kept')
 
-out_csv = out_dir / 'jester_full.csv'
-with open(out_csv, 'w', newline='') as f:
-    writer = csv.DictWriter(f, fieldnames=['joke_id', 'joke_text', 'rating'])
-    writer.writeheader()
-    total_in, total_out = 0, 0
-    for shard_path in parquet_files:
-        try:
-            local = download_shard(shard_path, out_dir)
-            table = pq.read_table(local)
-            for row in table.to_pylist():
-                total_in += 1
-                joke_text = row.get('jokeText', '')
-                rating = row.get('rating', None)
-                if not joke_text or rating is None:
-                    continue
-                try:
-                    rating = float(rating)
-                except (TypeError, ValueError):
-                    continue
-                if rating != rating:
-                    continue
-                writer.writerow({
-                    'joke_id': abs(hash(joke_text)) % (10**12),
-                    'joke_text': str(joke_text).replace('\n', ' ').strip()[:1500],
-                    'rating': rating,
-                })
-                total_out += 1
-            os.remove(local)
-        except Exception as e:
-            print(f'    ERROR {shard_path}: {e}')
-
-print(f'  Total: {total_in} in, {total_out} kept')
-
-# ===== Step 3: Load + normalize =====
-print('\n=== Step 3: Load Jester ===')
 joke_texts, ratings, joke_ids = [], [], []
 with open(out_csv) as f:
     reader = csv.DictReader(f)
@@ -133,19 +85,9 @@ ratings_norm = (ratings - ratings.min()) / (ratings.max() - ratings.min()) * 100
 # ===== Step 4: M3 Recipe - RoBERTa-base + Linear(768, 1) =====
 print('\n=== Step 4: Define M3 model ===')
 from transformers import RobertaTokenizer, RobertaModel
+from roberta_regressor import RobertaRegressor
 
-class RobertaRegressor(nn.Module):
-    def __init__(self):
-        super().__init__()
-        self.backbone = RobertaModel.from_pretrained('roberta-base')
-        # FINE-TUNE backbone (not frozen) — this is the M3 fix
-        self.head = nn.Linear(self.backbone.config.hidden_size, 1)
-
-    def forward(self, input_ids, attention_mask):
-        out = self.backbone(input_ids=input_ids, attention_mask=attention_mask)
-        mask = attention_mask.unsqueeze(-1).float()
-        pooled = (out.last_hidden_state * mask).sum(dim=1) / mask.sum(dim=1).clamp(min=1)
-        return self.head(pooled).squeeze(-1)
+# RobertaRegressor is imported from roberta_regressor.py
 
 # ===== Step 5: M3 Single-run training (4 epochs, no 5x3) =====
 print('\n=== Step 5: M3 single-run training ===')

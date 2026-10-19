@@ -139,19 +139,9 @@ ratings_norm = (ratings - ratings.min()) / (ratings.max() - ratings.min()) * 100
 # ===== Step 4: Define FINE-TUNED RoBERTa =====
 print('\n=== Step 4: Define model (fine-tuned RoBERTa + head) ===')
 from transformers import RobertaTokenizer, RobertaModel
+from roberta_regressor import RobertaRegressor
 
-class RobertaRegressor(nn.Module):
-    def __init__(self):
-        super().__init__()
-        self.backbone = RobertaModel.from_pretrained('roberta-base')
-        # FINE-TUNE backbone (not frozen) — this is the fix
-        self.head = nn.Linear(self.backbone.config.hidden_size, 1)
-
-    def forward(self, input_ids, attention_mask):
-        out = self.backbone(input_ids=input_ids, attention_mask=attention_mask)
-        mask = attention_mask.unsqueeze(-1).float()
-        pooled = (out.last_hidden_state * mask).sum(dim=1) / mask.sum(dim=1).clamp(min=1)
-        return self.head(pooled).squeeze(-1)
+# RobertaRegressor is imported from roberta_regressor.py
 
 # ===== Step 5: 5x3 CV with memory optimizations =====
 print('\n=== Step 5: 5x3 repeated joke-disjoint CV (fine-tuned) ===')

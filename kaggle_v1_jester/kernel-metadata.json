@@ -1,18 +1,13 @@
 {
-  "id": "subhajitdas/v1-jester-m3-recipe",
-  "title": "v1 Jester M3 Recipe Reproduction",
-  "code_file": "v1_jester_m3_recipe.py",
+  "id": "subhajitdas/v1-hahascore-kernel",
+  "title": "v1 HaHaScore Kaggle kernel (unified)",
+  "code_file": "kaggle_run.py",
   "language": "python",
   "kernel_type": "script",
   "is_private": true,
   "enable_gpu": true,
   "enable_internet": true,
-  "keywords": [
-    "jester",
-    "roberta",
-    "m3-recipe",
-    "regression"
-  ],
+  "keywords": ["jester", "roberta", "5x3cv", "m3-recipe", "finetuned", "regression"],
   "dataset_sources": [],
   "competition_sources": [],
   "kernel_sources": []

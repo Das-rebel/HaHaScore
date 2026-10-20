@@ -33,3 +33,6 @@ models/*_pretrain.pt
 models/cascade_v8*.pt
 
 # ONNX models go in deployment/models for HF Space tracking
+experiments/v1_jester_regression/jester_embeddings_50k.npz
+experiments/v1_jester_regression/jester_full.csv
+kaggle_v1_jester/jester_cache/

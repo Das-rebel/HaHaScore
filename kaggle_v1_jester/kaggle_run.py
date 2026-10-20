@@ -166,8 +166,10 @@ def main():
         # Running locally without Kaggle pip — assume deps already installed
         print('  pip not in PATH; assuming deps already installed (local mode)')
     else:
+        # v19 LESSON: do NOT install/upgrade pyarrow — Kaggle pre-installs
+        # a compatible version. Installing pyarrow==18.1.0 DOWNGRADES it and
+        # causes 'AttributeError: module pyarrow.lib has no attribute PyExtensionType'
         _pip = ['pip']
-        subprocess.run(_pip + ['install', '--quiet', 'pyarrow==18.1.0'], check=True)
         subprocess.run(_pip + ['install', '--quiet', '--upgrade',
                             'transformers', 'scipy', 'scikit-learn', 'requests'],
                        check=True)

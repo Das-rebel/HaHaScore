@@ -1,13 +1,20 @@
 {
-  "id": "subhajitdas/v1-hahascore-kernel",
-  "title": "v1 HaHaScore Kaggle kernel (unified)",
+  "id": "subhajitdas/v1-hahascore-kernel-v6",
+  "title": "v1 HaHaScore kernel v6 (no pyarrow pin)",
   "code_file": "kaggle_run.py",
   "language": "python",
   "kernel_type": "script",
   "is_private": true,
   "enable_gpu": true,
   "enable_internet": true,
-  "keywords": ["jester", "roberta", "5x3cv", "m3-recipe", "finetuned", "regression"],
+  "keywords": [
+    "jester",
+    "roberta",
+    "5x3cv",
+    "m3-recipe",
+    "finetuned",
+    "regression"
+  ],
   "dataset_sources": [],
   "competition_sources": [],
   "kernel_sources": []

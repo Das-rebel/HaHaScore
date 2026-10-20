@@ -95,6 +95,28 @@ def write_jester_csv(output_dir):
                 pass
     return out_csv, total_in, total_out
 
+def load_csv(csv_path, max_samples=None):
+    import csv as _csv
+    import numpy as _np
+    csv_path = Path(csv_path)
+    joke_texts, ratings, joke_ids = [], [], []
+    with open(csv_path) as f:
+        reader = _csv.DictReader(f)
+        for row in reader:
+            joke_texts.append(row['joke_text'])
+            ratings.append(float(row['rating']))
+            joke_ids.append(int(row['joke_id']))
+    ratings = _np.array(ratings)
+    joke_ids = _np.array(joke_ids)
+    if max_samples and len(joke_texts) > max_samples:
+        rng = _np.random.RandomState(42)
+        keep = rng.choice(len(joke_texts), max_samples, replace=False)
+        keep.sort()
+        joke_texts = [joke_texts[i] for i in keep]
+        ratings = ratings[keep]
+        joke_ids = joke_ids[keep]
+    return joke_texts, ratings, joke_ids
+
 # Inline RobertaRegressor (from roberta_regressor.py)
 class RobertaRegressor(nn.Module):
     def __init__(self, model_name='roberta-base', freeze_backbone=False, use_fp16=False,
@@ -139,10 +161,16 @@ def main():
 
     # ===== Step 1: Install deps =====
     print('\n=== Step 1: Install deps ===')
-    subprocess.run(['pip', 'install', '--quiet', 'pyarrow==18.1.0'], check=True)
-    subprocess.run(['pip', 'install', '--quiet', '--upgrade',
-                    'transformers', 'scipy', 'scikit-learn', 'requests'],
-                   check=True)
+    import shutil as _shutil
+    if _shutil.which('pip') is None:
+        # Running locally without Kaggle pip — assume deps already installed
+        print('  pip not in PATH; assuming deps already installed (local mode)')
+    else:
+        _pip = ['pip']
+        subprocess.run(_pip + ['install', '--quiet', 'pyarrow==18.1.0'], check=True)
+        subprocess.run(_pip + ['install', '--quiet', '--upgrade',
+                            'transformers', 'scipy', 'scikit-learn', 'requests'],
+                       check=True)
     print('  Installed')
 
     from scipy.stats import spearmanr
@@ -153,17 +181,28 @@ def main():
     from sklearn.metrics import mean_absolute_error, mean_squared_error
     from sklearn.model_selection import GroupKFold
 
-    device = 'cuda'
-    if device == 'cuda':
-        free, total = torch.cuda.mem_get_info()
-        if free < 4 * 1024**3:  # need ~4GB for roberta-base + head
-            print(f'  WARNING: only {free/1e9:.1f} GB free GPU, falling back to CPU')
-            device = 'cpu' if torch.cuda.is_available() else 'cpu'
+    # v19 LESSON: torch.cuda.is_available() returns True in some edge cases
+    # but mem_get_info() can fail with AssertionError. Wrap defensively.
+    device = 'cpu'
+    try:
+        if torch.cuda.is_available():
+            free, total = torch.cuda.mem_get_info()
+            if free >= 4 * 1024**3:  # need ~4GB for roberta-base + head
+                device = 'cuda'
+            else:
+                print(f'  WARNING: only {free/1e9:.1f} GB free GPU, falling back to CPU')
+    except Exception as e:
+        print(f'  WARNING: torch.cuda check failed ({e}), falling back to CPU')
+        device = 'cpu'
     print(f'  Device: {device}')
 
     # ===== Step 2: Download Jester =====
     print('\n=== Step 2: Download Jester (via JesterSource) ===')
-    out_dir = Path('/kaggle/working/jester')
+    _kaggle_default = '/kaggle/working/jester'
+    if not os.path.exists(os.path.dirname(_kaggle_default)):
+        # Local mode: use current working dir
+        _kaggle_default = os.path.join(os.getcwd(), 'jester_cache')
+    out_dir = Path(os.environ.get('KAGGLE_WORKING_DIR', _kaggle_default))
     out_dir.mkdir(parents=True, exist_ok=True)
     csv_path, n_in, n_out = write_jester_csv(out_dir)
     print(f'  Wrote {csv_path}: {n_in} in, {n_out} kept')
@@ -273,7 +312,8 @@ def main():
         rmse = float(np.sqrt(mean_squared_error(ratings_va, preds)))
         return rho, mae, rmse
 
-    OUT_DIR = Path(args.out_dir) / 'v1_results'
+    out_dir_resolved = Path(args.out_dir)
+    OUT_DIR = out_dir_resolved / 'v1_results'
     OUT_DIR.mkdir(exist_ok=True)
     all_rhos, all_maes, all_rmses = [], [], []
     t_start = time.time()

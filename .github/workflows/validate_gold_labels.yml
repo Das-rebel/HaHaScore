@@ -1,0 +1,109 @@
+name: validate-gold-labels
+
+# Validates community gold-label submissions (PR mechanism per
+# RESEARCH_DECISIONS.md — user-labelled corpus expansion, target n>=50).
+# Format is the legacy HaHaScore one-Csv-per-video layout:
+#   <YouTubeID>.csv with header t0,t1,source,label (risa|no_risa)
+
+on:
+  pull_request:
+    paths:
+      - "data/gold_labels/**"
+  push:
+    paths:
+      - "data/gold_labels/**"
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate gold-label CSVs
+        run: |
+          python3 - <<'PY'
+          import csv, re, sys
+          from pathlib import Path
+
+          root = Path("data/gold_labels")
+          errors, warnings, files_ok = [], [], 0
+          yt_id = re.compile(r"^[A-Za-z0-9_-]{11}$")
+          LABELS = {"risa", "no_risa"}
+          SOURCES = {"Manual", "Initial", "Added", "Added_transcript"}  # legacy values kept
+          # Legacy baseline (34 files present before the community-PR mechanism).
+          # Grandfathered: format+range errors still fail, but the
+          # "needs BOTH labels" rule applies only to NEW submissions.
+          LEGACY = {
+              "-1FrUOEswOk","0g7nezWZyfY","1tO9MWWOgHk","6JQzl2LlXbQ","G-BPYtfjpS0",
+              "J1NYJu9ENMg","J9HLFJgUCW0","JLqTpOqhGXo","KVMbGry8AgM","LWYfo_8t5WQ",
+              "MMpTINFg9dQ","N7Z7Xc3sJuE","OMxKP1eBR_A","OxvCVuGQ-uk","QPywJakXcc0",
+              "Xut9-fki6PU","_QdTi-N_Pgk","cOTolCho3r8","iiyLmS-0GFQ","j8xbbnDIdRE",
+              "jWrkIQHBC54","l2oaxKORheA","mVoqH-XvlkI","oiRyNnyG698","pbYlQ-fZHWk",
+              "pcR0SFiBhTc","sXn99zQfges","tRN6rYyr9Bk","tvn8EJwYl7Q","xTjVsInWdjs",
+              "xcBog4qtnv0","xvNoe0HZnVc","y-9nbIdUpbA","yGgqulbbxgA",
+          }
+
+          for path in sorted(root.glob("*.csv")):
+              rel = str(path)
+              if not yt_id.match(path.stem):
+                  errors.append(f"{rel}: filename '{path.stem}' is not an 11-char YouTube ID")
+                  continue
+              try:
+                  rows = list(csv.DictReader(path.open(encoding="utf-8")))
+              except UnicodeDecodeError as e:
+                  errors.append(f"{rel}: not valid UTF-8 ({e})"); continue
+              if not rows:
+                  errors.append(f"{rel}: empty file"); continue
+              if list(rows[0].keys()) != ["t0", "t1", "source", "label"]:
+                  errors.append(f"{rel}: header must be exactly 't0,t1,source,label' "
+                                f"(got {list(rows[0].keys())})"); continue
+
+              segs, labels_seen, bad = [], set(), False
+              for i, r in enumerate(rows, 2):  # csv line numbers (header = 1)
+                  try:
+                      t0, t1 = float(r["t0"]), float(r["t1"])
+                  except ValueError:
+                      errors.append(f"{rel}:{i}: t0/t1 not numeric ({r['t0']!r},{r['t1']!r})"); bad = True; continue
+                  if not (0 <= t0 < t1 <= 7200):
+                      errors.append(f"{rel}:{i}: need 0 <= t0 < t1 <= 7200 (got {t0},{t1})"); bad = True
+                  elif not (0.1 <= t1 - t0 <= 120):
+                      errors.append(f"{rel}:{i}: segment duration {t1-t0:.2f}s outside 0.1-120s"); bad = True
+                  if r["label"] not in LABELS:
+                      errors.append(f"{rel}:{i}: label '{r['label']}' not in {sorted(LABELS)}"); bad = True
+                  if r["source"] not in SOURCES:
+                      warnings.append(f"{rel}:{i}: unusual source '{r['source']}' (expected Manual)")
+                  labels_seen.add(r["label"])
+                  segs.append((t0, t1))
+
+              overlaps = sum(1 for a, b in zip(segs, segs[1:]) if b[0] < a[1])
+              if overlaps:
+                  warnings.append(f"{rel}: {overlaps} overlapping/adjacent segment(s) — please merge")
+              if not bad and len(segs) < 20:
+                  warnings.append(f"{rel}: only {len(segs)} segments (<20) — thin but accepted")
+              if not bad and labels_seen != LABELS:
+                  if path.stem in LEGACY:
+                      warnings.append(f"{rel}: legacy file missing {sorted(LABELS - labels_seen)} "
+                                      f"(grandfathered; new files require both labels)")
+                  else:
+                      errors.append(f"{rel}: needs BOTH risa and no_risa (got {sorted(labels_seen)})")
+              if not bad:
+                  files_ok += 1
+                  print(f"OK  {rel}: {len(segs)} segments")
+
+          if files_ok == 0 and not root.glob("*.csv"):
+              warnings.append("no CSV files found in data/gold_labels/ — nothing to validate")
+
+          for w in warnings: print(f"WARN {w}")
+          for e in errors:   print(f"ERROR {e}")
+          print(f"\nSummary: {files_ok} file(s) valid, {len(warnings)} warning(s), {len(errors)} error(s)")
+          sys.exit(1 if errors else 0)
+          PY
+
+      - name: Report gold-set size
+        if: always()
+        run: |
+          n=$(ls data/gold_labels/*.csv 2>/dev/null | wc -l)
+          echo "Gold-set size after this PR: **$n videos** (target >= 50)" >> "$GITHUB_STEP_SUMMARY"
+          if [ "$n" -lt 50 ]; then
+            echo "Still below the n>=50 target from the paper's Limitations section." >> "$GITHUB_STEP_SUMMARY"
+          fi

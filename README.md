@@ -6,7 +6,7 @@
 
 | Track | Status |
 |---|---|
-| **v1 canonical** | Text-only RoBERTa regression on Jester. **ρ = 0.2292 ± 0.0289** (5×3 honest, GATE NOT MET) |
+| **v1 canonical** | Text-only RoBERTa regression on Jester. **ρ = 0.2920 ± 0.0272** (5×3 honest, full fine-tune, GATE NOT MET) |
 | **v2 deferred** | Multimodal text + audio fusion (deferred until v1 baseline established) |
 | **v2 LaughO sister project** | Audio-only laughter detection on AudioSet (sister project, not v1) |
 | **Methodology paper** | "Evaluating Speech-Humor Models Without Identity Leakage" (5×3 repeated CV falsification case study, ready to submit) |
